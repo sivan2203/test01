@@ -164,11 +164,11 @@ flowchart TD
 - **Prevents:** analytics and dashboard teams ranking "best source" by different metrics.
 - **Rule:** Seller home "top source" ranks sources by public `store_view` count for the selected period. Product views and CTA clicks may show source breakdown in analytics detail but do not drive the home dashboard top-source label in MVP.
 
-### AD-20 — Public availability and activation success are distinct states
+### AD-20 — Public route availability and activation completeness are distinct
 
-- **Binds:** UJ-1, SM-1, SM-2, UX State Patterns, onboarding/dashboard
-- **Prevents:** onboarding, public storefront, and metrics disagreeing on whether a store is "live" after one product or three.
-- **Rule:** `is_publicly_viewable` is true when a store has a valid slug and at least one published product. `activation_complete` is true when a seller has at least three published products. The public link is available at `is_publicly_viewable`; activation metrics and dashboard nudges use `activation_complete`.
+- **Binds:** FR-3, FR-10, FR-13, FR-17, SM-1, SM-2, UX State Patterns, onboarding/dashboard
+- **Prevents:** public empty-store UX, storefront availability, analytics, and activation metrics disagreeing on whether a store exists, has products, or is activation-complete.
+- **Rule:** A store public route is resolvable when the store exists and has a valid current slug. If it has zero published products, the public storefront returns HTTP 200 with the store header and empty catalog state, and eligible public store views may be counted. Published products are required for product cards/product detail visibility, not for the store route to exist. `activation_complete` is true when a seller has at least three published products. Dashboard nudges use `activation_complete`; public route existence uses valid store slug.
 
 ### AD-21 — Import extraction metadata has a data home when FR-9 ships
 

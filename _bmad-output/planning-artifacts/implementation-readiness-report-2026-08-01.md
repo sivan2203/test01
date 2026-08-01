@@ -739,3 +739,122 @@ The product plan is directionally strong and well-scoped. The remaining issues a
 
 **Assessment date:** 2026-08-01  
 **Assessor:** Codex via `bmad-check-implementation-readiness`
+
+## Rerun After Correct Course Updates — 2026-08-01
+
+### Document Discovery
+
+Rerun document inventory after approved Correct Course edits.
+
+#### Included Documents
+
+- PRD: `C:\Work\projects\test01\_bmad-output\planning-artifacts\prds\prd-test01-2026-08-01\prd.md`
+- PRD addendum: `C:\Work\projects\test01\_bmad-output\planning-artifacts\prds\prd-test01-2026-08-01\addendum.md`
+- Architecture: `C:\Work\projects\test01\_bmad-output\planning-artifacts\architecture\architecture-test01-2026-08-01\ARCHITECTURE-SPINE.md`
+- UX design: `C:\Work\projects\test01\_bmad-output\planning-artifacts\ux-designs\ux-test01-2026-08-01\DESIGN.md`
+- UX experience: `C:\Work\projects\test01\_bmad-output\planning-artifacts\ux-designs\ux-test01-2026-08-01\EXPERIENCE.md`
+- Epics/stories: `C:\Work\projects\test01\_bmad-output\planning-artifacts\epics.md`
+
+#### Discovery Issues
+
+- Critical duplicates: none found.
+- Missing required documents: none found.
+- Sharded `index.md` versions for PRD, Architecture, UX, or Epics: none found.
+
+### PRD Analysis Rerun
+
+- PRD and addendum loaded successfully.
+- Functional requirements extracted: 22.
+- Non-functional requirements extracted: 6.
+- Phase-blocking open questions: none.
+- PRD scope remains stable after Correct Course; no PRD edits were required.
+
+### Epic Coverage Validation Rerun
+
+#### Coverage Statistics
+
+- Total PRD FRs: 22.
+- FRs covered in epic coverage map: 22.
+- FRs represented in story-level `**Requirements:**` trace lines: 22.
+- Extra FR IDs in epics not found in PRD: 0.
+- Missing FR coverage: 0.
+
+#### Story Traceability
+
+- Story count after Correct Course update: 19.
+- Story-level `**Requirements:**` lines: 19.
+- New setup story present: `Story 1.0: Initialize Greenfield Web App Foundation`.
+- Conditional import label present on `Story 5.1`.
+
+### UX Alignment Rerun
+
+#### Prior High Finding Status
+
+Resolved.
+
+The prior conflict between PRD/UX and Architecture on empty storefront behavior has been corrected in Architecture AD-20.
+
+- PRD/UX expectation: valid store with zero published products can show public empty state.
+- Updated Architecture AD-20: a store public route is resolvable when the store exists and has a valid current slug; if it has zero published products, it returns HTTP 200 with store header and empty catalog state.
+- The old conflicting rule requiring at least one published product for public route availability is no longer present in AD-20.
+
+#### UX Document Status
+
+Found and still aligned:
+
+- `DESIGN.md`
+- `EXPERIENCE.md`
+
+No new UX/Architecture alignment gaps found in the rerun.
+
+### Epic Quality Review Rerun
+
+#### Prior Major Findings Status
+
+Resolved.
+
+1. **Missing greenfield setup story** — resolved by adding `Story 1.0: Initialize Greenfield Web App Foundation`.
+2. **Missing story-level FR references** — resolved by adding `**Requirements:**` trace lines to all 19 stories.
+
+#### Prior Minor Findings Status
+
+Resolved / downgraded to sprint-planning watch item.
+
+1. **Story 1.1 sizing risk** — resolved by moving shared setup/design/platform foundation into Story 1.0 and narrowing Story 1.1 to seller sign-in/admin shell.
+2. **Epic 5 conditional status** — resolved in story text via explicit `Should / conditional` release classification. Sprint planning should preserve this sequencing.
+
+#### Current Quality Assessment
+
+- Epics remain user-value oriented.
+- Story dependency order is coherent.
+- No forward dependencies found.
+- No all-tables-upfront setup detected.
+- Story 1.0 is a justified greenfield foundation story and explicitly avoids creating all domain tables upfront.
+
+### Rerun Summary and Recommendations
+
+#### Overall Readiness Status
+
+**READY for sprint planning.**
+
+#### Issues Requiring Attention
+
+No Critical, High, or Major readiness blockers remain after Correct Course updates.
+
+#### Watch Items for Sprint Planning
+
+1. Keep `Story 5.1: Import Excel/CSV Products as Drafts` conditional and sequence it after the core MVP loop unless capacity explicitly allows.
+2. When turning Story 1.0 into an implementation-ready story file, keep it minimal: foundation only, no premature domain table creation.
+
+#### Recommended Next Steps
+
+1. Commit the Correct Course updates.
+2. Run `bmad-sprint-planning`.
+3. Start implementation story creation with `Story 1.0`.
+
+#### Final Note
+
+The previous readiness blockers were planning-handoff issues, not product concept failures. They have now been resolved in Architecture and Epics. The package is ready to move into sprint planning.
+
+**Rerun assessment date:** 2026-08-01  
+**Assessor:** Codex via `bmad-check-implementation-readiness`

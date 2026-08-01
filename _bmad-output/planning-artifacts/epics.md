@@ -234,11 +234,52 @@ FR22: Epic 1 — minimal visual language
 
 Продавец может зарегистрироваться, создать базовый Магазин, настроить публичную ссылку, увидеть предпросмотр и работать в mobile-first интерфейсе с общей дизайн-системой.
 
+### Story 1.0: Initialize Greenfield Web App Foundation
+
+As a developer,
+I want the MVP web app foundation initialized with the agreed stack, routes, design primitives, database migration baseline, and environment boundaries,
+So that product stories can be implemented consistently without reworking the substrate.
+
+**Requirements:** NFR1, NFR2, NFR3, NFR5, AD-1, AD-2, AD-13, AD-15, AD-17, AD-18, UX-DR1, UX-DR2, UX-DR17, UX-DR18, UX-DR19
+
+**Acceptance Criteria:**
+
+**Given** the project is greenfield
+**When** the initial app foundation is created
+**Then** it uses the architecture-approved stack: Node.js 24 LTS, Next.js App Router, React, Tailwind CSS, shadcn/ui, Supabase client packages, and Vercel-compatible configuration
+**And** actual package versions are recorded if starter defaults differ from architecture assumptions.
+
+**Given** the app routes are initialized
+**When** route groups and shared folders are created
+**Then** seller/admin surfaces and public buyer storefront surfaces are separated
+**And** shared code is limited to primitives, adapters, auth/session, analytics ingestion, and design-system components.
+
+**Given** the design system foundation is initialized
+**When** base styles and primitives are available
+**Then** monochrome tokens, contrast-safe text pairs, 44x44 CSS px tap target guidance, reduced motion, and reduced transparency fallbacks are represented in reusable primitives or documentation.
+
+**Given** Supabase is introduced
+**When** schema, RLS, storage policies, or seed data are needed
+**Then** changes are represented through timestamped SQL migrations under `supabase/migrations/`
+**And** browser code uses only public anon credentials while service-role usage is isolated to server-only maintenance/admin paths.
+
+**Given** deployment configuration is prepared
+**When** local, preview, staging, and production environments are documented or stubbed
+**Then** preview deployments are intended to point only to staging Supabase and production only to production Supabase
+**And** secrets are expected to live in provider environment variables, not committed files.
+
+**Given** the foundation is complete
+**When** a developer runs the baseline checks
+**Then** the app has a minimal smoke test or verification path for public route rendering and seller route protection
+**And** later stories can add domain tables/entities only when first needed.
+
 ### Story 1.1: Seller Sign-in and Mobile Admin Shell
 
 As a seller,
 I want to register or sign in and land in a protected mobile-first seller cabinet,
 So that I can start creating my personal storefront from my phone.
+
+**Requirements:** FR1, FR21, FR22, AD-1, AD-2, AD-9, AD-15, UX-DR16, UX-DR17, UX-DR19
 
 **Acceptance Criteria:**
 
@@ -257,10 +298,10 @@ So that I can start creating my personal storefront from my phone.
 **Then** the layout is usable mobile-first
 **And** primary navigation exposes Home / Products / Analytics / Store with tap targets at least 44x44 CSS px.
 
-**Given** the visual foundation is loaded
-**When** seller/admin screens render
-**Then** they use the MVP monochrome design tokens, readable contrast, and minimal liquid-glass treatment
-**And** the UI does not resemble a marketplace feed.
+**Given** the shared app foundation from Story 1.0 exists
+**When** seller/admin shell screens render
+**Then** they use the shared mobile-first navigation and design primitives
+**And** Story 1.1 does not introduce a separate competing visual system.
 
 **Given** the implementation stores or checks seller identity
 **When** seller-scoped data is accessed
@@ -272,6 +313,8 @@ So that I can start creating my personal storefront from my phone.
 As a seller,
 I want to create and edit my store profile,
 So that buyers see who is selling the products and what the store is about.
+
+**Requirements:** FR2, FR21, FR22, AD-13, UX-DR4, UX-DR13, UX-DR14, UX-DR17
 
 **Acceptance Criteria:**
 
@@ -306,6 +349,8 @@ As a seller,
 I want to set and edit a unique public store slug,
 So that I can share a clean personal storefront link in my social profiles.
 
+**Requirements:** FR3, FR21, AD-10, UX-DR11, UX-DR13, UX-DR17
+
 **Acceptance Criteria:**
 
 **Given** I am editing my store settings
@@ -338,6 +383,8 @@ So that I can share a clean personal storefront link in my social profiles.
 As a seller,
 I want to preview my storefront as a buyer would see it,
 So that I can check my public presentation before sharing the link.
+
+**Requirements:** FR4, FR21, FR22, AD-2, AD-5, AD-7, UX-DR20
 
 **Acceptance Criteria:**
 
@@ -375,6 +422,8 @@ As a seller,
 I want to manually create a product draft with core product information,
 So that I can start building my storefront catalog without publishing incomplete products.
 
+**Requirements:** FR5, FR7, FR21, NFR6, AD-5, AD-13, UX-DR10, UX-DR13, UX-DR14
+
 **Acceptance Criteria:**
 
 **Given** I am an authenticated seller with a store
@@ -407,6 +456,8 @@ So that I can start building my storefront catalog without publishing incomplete
 As a seller,
 I want to add, remove, and reorder product photos,
 So that buyers can understand the product visually before contacting me.
+
+**Requirements:** FR6, FR12, FR21, AD-12, AD-16, UX-DR6, UX-DR17
 
 **Acceptance Criteria:**
 
@@ -446,6 +497,8 @@ As a seller,
 I want to edit a product and control whether it is Draft, Published, Hidden, or Deleted,
 So that I decide exactly what buyers can see in my storefront.
 
+**Requirements:** FR5, FR7, FR13, NFR6, AD-5, AD-13, AD-16, UX-DR10, UX-DR15
+
 **Acceptance Criteria:**
 
 **Given** I am editing an existing product
@@ -484,6 +537,8 @@ As a seller,
 I want to view and filter my product list,
 So that I can quickly find products and continue editing my catalog.
 
+**Requirements:** FR8, FR21, AD-13, UX-DR10, UX-DR14, UX-DR16, UX-DR17
+
 **Acceptance Criteria:**
 
 **Given** I am an authenticated seller with products
@@ -520,6 +575,8 @@ So that I can quickly find products and continue editing my catalog.
 As a buyer,
 I want to open a seller’s public storefront by its unique link,
 So that I can see who the seller is and what products are available.
+
+**Requirements:** FR10, FR13, FR21, FR22, NFR1, NFR2, AD-2, AD-5, AD-10, AD-20, UX-DR4, UX-DR14, UX-DR19
 
 **Acceptance Criteria:**
 
@@ -559,6 +616,8 @@ As a buyer,
 I want to browse products in list or grid view,
 So that I can quickly scan the seller’s catalog in the format that feels easiest on my phone.
 
+**Requirements:** FR11, FR16, FR21, FR22, AD-4, AD-5, UX-DR3, UX-DR5, UX-DR7, UX-DR17, UX-DR19
+
 **Acceptance Criteria:**
 
 **Given** a public storefront has Published products
@@ -596,6 +655,8 @@ So that I can quickly scan the seller’s catalog in the format that feels easie
 As a buyer,
 I want to open a product detail page with photos, description, price, and contact CTA,
 So that I can understand the product before messaging the seller.
+
+**Requirements:** FR12, FR13, FR16, FR21, FR22, NFR1, AD-5, AD-11, AD-12, AD-16, UX-DR6, UX-DR7, UX-DR17
 
 **Acceptance Criteria:**
 
@@ -635,6 +696,8 @@ As a seller,
 I want to configure Telegram as my store’s contact channel,
 So that buyers can contact me from product cards and product pages.
 
+**Requirements:** FR14, FR21, AD-3, AD-13, UX-DR7, UX-DR13, UX-DR17
+
 **Acceptance Criteria:**
 
 **Given** I am an authenticated seller editing store/contact settings
@@ -667,6 +730,8 @@ So that buyers can contact me from product cards and product pages.
 As a buyer,
 I want the contact CTA to open Telegram with product context already prepared,
 So that I can message the seller without manually copying product details.
+
+**Requirements:** FR15, FR16, FR18, FR19, AD-3, AD-4, AD-8, UX-DR7, UX-DR8, UX-DR17
 
 **Acceptance Criteria:**
 
@@ -704,6 +769,8 @@ So that I can message the seller without manually copying product details.
 As a seller,
 I want storefront views, product views, and contact CTA clicks to be recorded,
 So that I can later understand buyer interest in my store and products.
+
+**Requirements:** FR18, NFR4, NFR5, AD-2, AD-4, AD-7, AD-14
 
 **Acceptance Criteria:**
 
@@ -743,6 +810,8 @@ As a seller,
 I want buyer visits and contact clicks to keep their traffic source,
 So that I can understand whether Instagram, Telegram, direct links, or unknown sources bring interest.
 
+**Requirements:** FR19, NFR4, NFR5, AD-8, AD-14
+
 **Acceptance Criteria:**
 
 **Given** a buyer opens a public storefront URL with explicit source or UTM parameters
@@ -781,6 +850,8 @@ As a seller,
 I want to see today’s key store analytics on my home dashboard,
 So that I immediately understand whether my shared link is getting attention.
 
+**Requirements:** FR17, FR19, FR20, FR21, NFR5, AD-14, AD-19, AD-20, UX-DR9, UX-DR14, UX-DR16
+
 **Acceptance Criteria:**
 
 **Given** I am an authenticated seller with a store
@@ -818,6 +889,8 @@ So that I immediately understand whether my shared link is getting attention.
 As a seller,
 I want to see product-level views and contact clicks,
 So that I can understand which products attract buyer interest.
+
+**Requirements:** FR18, FR20, FR21, NFR5, AD-7, AD-14, AD-19, UX-DR9, UX-DR17
 
 **Acceptance Criteria:**
 
@@ -860,6 +933,10 @@ So that I can understand which products attract buyer interest.
 As a seller,
 I want to import an Excel or CSV file into product drafts,
 So that I can move an existing small catalog into my storefront with minimal manual entry.
+
+**Requirements:** FR9, FR21, AD-6, AD-13, AD-21, UX-DR12, UX-DR13, UX-DR14
+
+**Release Classification:** Should / conditional. Include in first release only if it does not delay the core MVP loop: manual product → public storefront → Telegram CTA → analytics.
 
 **Acceptance Criteria:**
 
