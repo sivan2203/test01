@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Персональная витрина — mobile storefront mock</title>
+  <style>
+    body{margin:0;background:#f7f7f5;color:#111;font:15px/1.45 Inter,system-ui,sans-serif}.phone{max-width:390px;margin:0 auto;min-height:100vh;padding:18px 16px 96px}.hero{background:rgba(255,255,255,.72);backdrop-filter:blur(16px);border:1px solid #e2e2de;border-radius:28px;padding:18px;box-shadow:0 16px 40px rgba(17,17,17,.06)}.avatar{width:64px;height:64px;border-radius:20px;background:#111;margin-bottom:14px}.muted{color:#5f5f5b}.tabs{display:flex;gap:8px;margin:22px 0 14px}.tab{border:1px solid #e2e2de;border-radius:999px;padding:8px 12px;background:#fff}.tab.active{background:#111;color:#fff}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{background:#fff;border:1px solid #e2e2de;border-radius:20px;overflow:hidden}.photo{aspect-ratio:1;background:linear-gradient(135deg,#ddd,#f7f7f5)}.card-body{padding:10px}.price{font-weight:650;margin-top:3px}.cta{margin-top:10px;width:100%;height:44px;border:0;border-radius:999px;background:#111;color:#fff;font-weight:650}.sticky{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(358px,calc(100vw - 32px));background:rgba(255,255,255,.78);backdrop-filter:blur(18px);border:1px solid #e2e2de;border-radius:999px;padding:8px;display:flex;gap:8px}.sticky button{flex:1;height:44px;border:0;border-radius:999px;background:#229ed9;color:#fff;font-weight:700}
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <section class="hero">
+      <div class="avatar"></div>
+      <h1>Anna Light Studio</h1>
+      <p class="muted">Светильники ручной работы. Небольшие партии, можно обсудить цвет и размер.</p>
+    </section>
+    <div class="tabs"><div class="tab active">Сетка</div><div class="tab">Список</div></div>
+    <section class="grid">
+      <article class="card"><div class="photo"></div><div class="card-body"><strong>Лампа Luna</strong><div class="price">4 900 ₽</div><button class="cta">Связаться</button></div></article>
+      <article class="card"><div class="photo"></div><div class="card-body"><strong>Бра Soft</strong><div class="price">по запросу</div><button class="cta">Связаться</button></div></article>
+      <article class="card"><div class="photo"></div><div class="card-body"><strong>Настольная Orb</strong><div class="price">3 700 ₽</div><button class="cta">Связаться</button></div></article>
+      <article class="card"><div class="photo"></div><div class="card-body"><strong>Подвес Cloud</strong><div class="price">6 200 ₽</div><button class="cta">Связаться</button></div></article>
+    </section>
+  </main>
+  <div class="sticky"><button>Связаться в Telegram</button></div>
+</body>
+</html>

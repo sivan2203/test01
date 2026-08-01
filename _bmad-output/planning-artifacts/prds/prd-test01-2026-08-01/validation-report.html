@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PRD Validation: mobile-first персональная витрина</title>
+<style>
+  :root{--bg:#fafaf9;--surface:#fff;--border:#e7e5e4;--text:#1c1917;--muted:#78716c;--strong:#16a34a;--adequate:#65a30d;--thin:#d97706;--good:#16a34a;--medium:#ca8a04;--low:#64748b}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif}
+  .container{max-width:980px;margin:0 auto;padding:32px 24px 64px}.header{display:flex;justify-content:space-between;gap:24px;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:24px}
+  h1{font-size:22px;margin:0}.subtitle{color:var(--muted);font:12px ui-monospace,Menlo,monospace;margin-top:4px}.grade{background:var(--good);color:white;border-radius:8px;padding:10px 18px;font-weight:700;height:max-content}
+  .box,.dimension,.reviewer,.mechanical{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:16px}.box{padding:18px 22px;border-left:3px solid var(--good)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:24px}.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px}.card .name{color:var(--muted);font-size:13px}.card .v{font-weight:700}
+  summary{cursor:pointer;padding:14px 20px;display:flex;gap:12px;align-items:center}summary h2{font-size:16px;margin:0;flex:1}.pill{color:white;border-radius:999px;padding:3px 10px;text-transform:uppercase;font-size:11px;font-weight:700}.strong{background:var(--strong)}.adequate{background:var(--adequate)}.thin{background:var(--thin)}
+  .body{padding:0 20px 18px}.finding{border-top:1px solid var(--border);padding:14px 0}.badge{border-radius:4px;padding:3px 8px;font-size:11px;font-weight:700;text-transform:uppercase}.sev-medium{background:#fef3c7;color:var(--medium)}.sev-low{background:#f1f5f9;color:var(--low)}
+  .finding h3{display:inline;font-size:15px;margin-left:8px}.loc{font-family:ui-monospace,Menlo,monospace;color:var(--muted);font-size:12px}.fix{margin-top:6px}.mechanical{padding:16px 20px}footer{margin-top:40px;border-top:1px solid var(--border);padding-top:16px;color:var(--muted);font:12px ui-monospace,Menlo,monospace}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>PRD: mobile-first персональная витрина — Validation Report</h1>
+      <div class="subtitle">C:\Work\projects\test01\_bmad-output\planning-artifacts\prds\prd-test01-2026-08-01\prd.md</div>
+    </div>
+    <div class="grade">Good</div>
+  </div>
+
+  <div class="box">
+    <p>The PRD is ready to proceed into UX, architecture, epics, and story slicing. The prior high-severity messenger-scope conflict is resolved: MVP now consistently supports Telegram only, while WhatsApp, VK, multiple active messengers, and alternative seller contacts are explicitly <code>Could</code>.</p>
+    <p>No critical or high findings remain. Remaining issues are medium/low downstream-precision improvements rather than blockers.</p>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="name">Decision-readiness</div><div class="v" style="color:var(--strong)">strong</div></div>
+    <div class="card"><div class="name">Substance over theater</div><div class="v" style="color:var(--strong)">strong</div></div>
+    <div class="card"><div class="name">Strategic coherence</div><div class="v" style="color:var(--strong)">strong</div></div>
+    <div class="card"><div class="name">Done-ness clarity</div><div class="v" style="color:var(--adequate)">adequate</div></div>
+    <div class="card"><div class="name">Scope honesty</div><div class="v" style="color:var(--strong)">strong</div></div>
+    <div class="card"><div class="name">Downstream usability</div><div class="v" style="color:var(--thin)">thin</div></div>
+    <div class="card"><div class="name">Shape fit</div><div class="v" style="color:var(--strong)">strong</div></div>
+  </div>
+
+  <section class="dimension"><details><summary><span class="pill strong">strong</span><h2>Decision-readiness</h2></summary><div class="body">
+    <p>Major MVP choices are now clear and decision-ready, including Telegram-only contact and explicit deferral of WhatsApp, VK, multiple active messengers, and alternative contacts.</p>
+    <div class="finding"><span class="badge sev-medium">medium</span><h3>Conditional import needs a release decision point</h3><div class="loc">§2.3 UJ-2; §4.2 FR-9; §6.2; §7 SM-7; §13</div><div class="fix">Fix: add PM owner/timing for the first-release import decision.</div></div>
+  </div></details></section>
+
+  <section class="dimension"><details><summary><span class="pill strong">strong</span><h2>Strategic coherence</h2></summary><div class="body">
+    <p>The product thesis remains coherent: a lightweight conversion layer between social discovery and Telegram conversation.</p>
+    <div class="finding"><span class="badge sev-medium">medium</span><h3>Dashboard “best source” needs FR-level acceptance</h3><div class="loc">§2.3 UJ-4; §4.5 FR-17-FR-20</div><div class="fix">Fix: define how top source is displayed and ranked.</div></div>
+  </div></details></section>
+
+  <section class="dimension"><details><summary><span class="pill adequate">adequate</span><h2>Done-ness clarity</h2></summary><div class="body">
+    <p>Most FRs have testable consequences. A few implementation-facing contracts still need tightening before final story slicing.</p>
+    <div class="finding"><span class="badge sev-medium">medium</span><h3>Product URL/permalink identity is implied but not defined</h3><div class="loc">§4.3 FR-12; §4.4 FR-15; §10</div><div class="fix">Fix: define product URL stability or delegate as required architecture decision.</div></div>
+    <div class="finding"><span class="badge sev-medium">medium</span><h3>NFR launch baselines need binding</h3><div class="loc">§4.6; §8</div><div class="fix">Fix: architecture/UX define test profiles, launch checks, and allowed exceptions.</div></div>
+  </div></details></section>
+
+  <section class="dimension"><details open><summary><span class="pill thin">thin</span><h2>Downstream usability</h2></summary><div class="body">
+    <p>Usable for downstream work, but still the area with the most cleanup: product URL identity, best-source aggregation, and 1-product public availability vs 3-product activation success.</p>
+    <div class="finding"><span class="badge sev-medium">medium</span><h3>Public availability and activation success can be read as different thresholds</h3><div class="loc">§2.3 UJ-1; §7 SM-1/SM-2; §10</div><div class="fix">Fix: separate “public after >=1 product” from “activation success after >=3 products.”</div></div>
+    <div class="finding"><span class="badge sev-low">low</span><h3><code>messenger_type</code> should be constrained for MVP</h3><div class="loc">§4.5 Analytics event catalog</div><div class="fix">Fix: allowed MVP value is <code>telegram</code>.</div></div>
+  </div></details></section>
+
+  <section class="mechanical">
+    <h2>Mechanical notes</h2>
+    <ul>
+      <li>Critical: 0; High: 0; Medium: 6; Low: 5.</li>
+      <li>FR, UJ, and SM IDs appear contiguous.</li>
+      <li>No inline assumptions remain.</li>
+      <li>The previous alternative-contacts high finding is resolved.</li>
+    </ul>
+  </section>
+
+  <section class="reviewer"><details><summary><h2>Reviewer files</h2></summary><div class="body">
+    <ul>
+      <li>C:\Work\projects\test01\_bmad-output\planning-artifacts\prds\prd-test01-2026-08-01\review-rubric.md</li>
+      <li>C:\Work\projects\test01\_bmad-output\planning-artifacts\prds\prd-test01-2026-08-01\review-downstream-readiness.md</li>
+    </ul>
+  </div></details></section>
+
+  <footer>Rubric: C:\Work\projects\test01\.agents\skills\bmad-prd\assets\prd-validation-checklist.md · Run at: 2026-08-01T03:07:08+03:00</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Одна ссылка между публикацией и разговором</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink:#11120f;
+      --soft:#5d605a;
+      --paper:#efefe9;
+      --glass:rgba(255,255,252,.58);
+      --glass-strong:rgba(255,255,252,.82);
+      --line:rgba(17,18,15,.14);
+      --hair:rgba(17,18,15,.08);
+      --shadow:0 20px 70px rgba(17,18,15,.10);
+      --radius:28px;
+      --ease:cubic-bezier(.2,.8,.2,1);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 78% 8%,rgba(255,255,255,.92) 0 14%,transparent 36%),
+        radial-gradient(circle at 12% 42%,rgba(255,255,255,.65),transparent 28%),
+        linear-gradient(145deg,#e6e6df,#f5f5ef 46%,#dedfd8);
+      font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      -webkit-font-smoothing:antialiased;
+      min-width:320px;
+    }
+    body::before{
+      content:"";position:fixed;inset:0;pointer-events:none;opacity:.38;z-index:-1;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.045'/%3E%3C/svg%3E")
+    }
+    button{font:inherit;color:inherit}
+    a{color:inherit}
+    :focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+    .shell{width:min(1180px,calc(100% - 32px));margin:auto}
+    .glass{background:var(--glass);border:1px solid rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),var(--shadow);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+    .eyebrow{margin:0 0 12px;text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:700;color:var(--soft)}
+    h1,h2,h3,p{margin-top:0}
+    h1{font-size:clamp(52px,10vw,130px);font-weight:500;letter-spacing:-.075em;line-height:.82;margin:0;max-width:1000px}
+    h2{font-size:clamp(36px,6vw,76px);font-weight:500;letter-spacing:-.055em;line-height:.95;margin-bottom:24px}
+    h3{font-size:22px;letter-spacing:-.025em}
+    p{line-height:1.55}
+    .muted{color:var(--soft)}
+    .hero{min-height:94svh;display:grid;align-items:center;padding:90px 0 56px;position:relative}
+    .hero-top{display:flex;justify-content:space-between;align-items:center;gap:16px;position:absolute;top:24px;left:0;right:0}
+    .mark{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+    .mark-dot{width:12px;height:12px;border:1px solid;border-radius:50%;box-shadow:inset 0 0 0 3px var(--paper)}
+    .date{font-variant-numeric:tabular-nums;color:var(--soft);font-size:12px}
+    .hero-copy{position:relative;z-index:2}
+    .hero h1 span{display:block}
+    .hero h1 .quiet{color:transparent;-webkit-text-stroke:1.4px var(--ink)}
+    .hero-deck{display:flex;justify-content:space-between;align-items:end;gap:28px;margin-top:44px}
+    .hero-deck p{max-width:500px;font-size:18px;margin:0}
+    .route{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end;font-size:12px;text-transform:uppercase;letter-spacing:.1em}
+    .route i{width:32px;height:1px;background:var(--ink);position:relative}
+    .route i::after{content:"";position:absolute;right:0;top:-3px;width:6px;height:6px;border-top:1px solid;border-right:1px solid;transform:rotate(45deg)}
+    .hero-orb{position:absolute;right:2%;top:22%;width:clamp(180px,28vw,370px);aspect-ratio:1;border-radius:46% 54% 63% 37%/45% 36% 64% 55%;z-index:1;filter:blur(.2px);animation:float 9s var(--ease) infinite alternate}
+    .hero-orb::before,.hero-orb::after{content:"";position:absolute;border-radius:inherit}
+    .hero-orb::before{inset:12%;border:1px solid rgba(255,255,255,.9);box-shadow:inset 18px 18px 45px rgba(255,255,255,.55),inset -18px -18px 40px rgba(17,18,15,.08)}
+    .hero-orb::after{inset:32%;background:rgba(255,255,255,.44);filter:blur(12px)}
+    @keyframes float{to{transform:translateY(24px) rotate(8deg);border-radius:60% 40% 43% 57%/39% 56% 44% 61%}}
+    .story-nav{position:sticky;top:12px;z-index:20;margin:0 auto 40px;width:min(880px,calc(100% - 24px));padding:8px;border-radius:999px;display:flex;overflow-x:auto;scrollbar-width:none}
+    .story-nav::-webkit-scrollbar{display:none}
+    .story-nav a{flex:0 0 auto;text-decoration:none;padding:10px 14px;border-radius:999px;font-size:12px;color:var(--soft);transition:.25s}
+    .story-nav a.active{background:var(--ink);color:var(--paper)}
+    section{padding:100px 0;scroll-margin-top:84px}
+    .chapter-head{display:grid;grid-template-columns:160px 1fr;gap:32px;align-items:start;margin-bottom:54px}
+    .chapter-no{font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:10px}
+    .chapter-no::after{content:"";height:1px;background:var(--line);flex:1}
+    .chapter-head .intro{max-width:740px;font-size:18px;color:var(--soft)}
+    .round-stage{position:relative;min-height:600px;display:grid;place-items:center}
+    .round-core{width:220px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;text-align:center;padding:34px;position:relative;z-index:4}
+    .round-core strong{display:block;font-size:28px;letter-spacing:-.04em;margin-bottom:6px}
+    .idea-card{position:absolute;width:min(290px,40%);padding:22px;border-radius:22px;transition:transform .5s var(--ease),opacity .5s}
+    .idea-card:nth-child(2){top:0;left:7%;transform:rotate(-4deg)}
+    .idea-card:nth-child(3){top:7%;right:5%;transform:rotate(3deg)}
+    .idea-card:nth-child(4){bottom:4%;right:7%;transform:rotate(-2deg)}
+    .idea-card:nth-child(5){bottom:0;left:4%;transform:rotate(4deg)}
+    .idea-card .tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin-bottom:30px}
+    .idea-card p{font-size:15px;margin-bottom:0}
+    .orbit{position:absolute;width:470px;aspect-ratio:1;border:1px solid var(--line);border-radius:50%}
+    .orbit::before,.orbit::after{content:"";position:absolute;background:var(--ink);border-radius:50%}
+    .orbit::before{width:7px;height:7px;left:-4px;top:50%}
+    .orbit::after{width:4px;height:4px;right:10%;top:18%}
+    .pulse-line{margin-top:32px;padding:24px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+    .pulse-line div{min-width:0}
+    .pulse-line b{display:block;font-size:13px;margin-bottom:7px}
+    .pulse-line span{color:var(--soft);font-size:13px;line-height:1.4}
+    .stimulus-lab{display:grid;grid-template-columns:260px 1fr;gap:48px;align-items:start}
+    .stimulus-buttons{display:flex;flex-direction:column;gap:9px;position:sticky;top:92px}
+    .stimulus-button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:14px 18px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;transition:.25s}
+    .stimulus-button:hover,.stimulus-button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+    .stimulus-button small{opacity:.55}
+    .stimulus-scene{min-height:480px;border-radius:var(--radius);padding:clamp(26px,5vw,60px);position:relative;overflow:hidden}
+    .stimulus-pane{display:none;min-height:350px;position:relative;z-index:2}
+    .stimulus-pane.active{display:grid;align-content:center;animation:reveal .45s var(--ease)}
+    @keyframes reveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+    .stimulus-word{font-size:clamp(54px,9vw,100px);letter-spacing:-.07em;line-height:.9;margin-bottom:30px}
+    .stimulus-pane p{font-size:20px;max-width:650px}
+    .stimulus-pane .foot{font-size:13px;color:var(--soft);margin-top:28px}
+    .mail-lines{position:absolute;inset:0;opacity:.4;background:repeating-linear-gradient(0deg,transparent 0 42px,var(--line) 43px 44px);transform:rotate(-8deg) scale(1.3)}
+    .blocks{position:absolute;inset:0;opacity:.45;background:linear-gradient(90deg,transparent 49.5%,var(--line) 50%,transparent 50.5%),linear-gradient(0deg,transparent 49.5%,var(--line) 50%,transparent 50.5%);background-size:100px 100px;transform:rotate(7deg) scale(1.2)}
+    .seal{position:absolute;right:8%;bottom:10%;width:180px;aspect-ratio:1;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;transform:rotate(-12deg);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--soft)}
+    .role-frame{border-radius:36px;padding:10px;max-width:1000px;margin:auto}
+    .role-top{display:flex;gap:6px;padding:8px 8px 16px}
+    .role-toggle{border:0;background:transparent;padding:11px 16px;border-radius:999px;cursor:pointer;color:var(--soft)}
+    .role-toggle[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+    .role-screen{background:rgba(255,255,252,.45);border-radius:27px;padding:clamp(24px,5vw,54px);min-height:480px;display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center}
+    .role-copy{display:none}
+    .role-copy.active{display:block;animation:reveal .45s var(--ease)}
+    .role-copy blockquote{margin:0 0 28px;font-size:clamp(27px,4vw,48px);line-height:1.05;letter-spacing:-.04em}
+    .role-copy ul{padding:0;margin:0;list-style:none;border-top:1px solid var(--line)}
+    .role-copy li{padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+    .phone{width:min(310px,100%);margin:auto;border:1px solid var(--line);border-radius:38px;padding:12px;background:rgba(17,18,15,.92);color:#f5f5ef;box-shadow:0 28px 60px rgba(17,18,15,.22)}
+    .phone-screen{background:#f1f1eb;color:#12130f;border-radius:28px;min-height:430px;overflow:hidden;padding:18px}
+    .phone-bar{height:18px;display:flex;justify-content:space-between;font-size:9px;margin-bottom:16px}
+    .store-head{display:flex;gap:10px;align-items:center;padding-bottom:14px;border-bottom:1px solid rgba(17,18,15,.12)}
+    .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(145deg,#d0d0c8,#fff);border:1px solid rgba(17,18,15,.12)}
+    .store-head strong{font-size:12px}.store-head small{display:block;color:#666;font-size:9px;margin-top:2px}
+    .view-switch{display:flex;gap:5px;justify-content:flex-end;margin:13px 0}
+    .view-switch button{width:28px;height:24px;border:1px solid rgba(17,18,15,.15);border-radius:8px;background:transparent;font-size:10px;cursor:pointer}
+    .view-switch button.on{background:#171812;color:#f5f5ef}
+    .products{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    .products.list{grid-template-columns:1fr}
+    .product{background:white;border-radius:14px;padding:7px;box-shadow:0 7px 18px rgba(17,18,15,.06)}
+    .products.list .product{display:grid;grid-template-columns:60px 1fr;gap:8px}
+    .product-img{aspect-ratio:1;background:linear-gradient(145deg,#c9cac4,#eeeee8);border-radius:10px}
+    .product b{display:block;font-size:10px;margin-top:6px}.product span{font-size:9px;color:#60615d}
+    .product button{width:100%;margin-top:7px;border:0;border-radius:8px;background:#171812;color:#f5f5ef;padding:7px 4px;font-size:8px}
+    .products.list .product button{width:auto;padding-inline:9px}
+    .principles{position:relative;max-width:920px;margin:auto}
+    .principle-row{display:grid;grid-template-columns:72px 1fr;gap:24px;padding:23px 0;border-bottom:1px solid var(--line);align-items:start}
+    .principle-row .num{font-size:12px;color:var(--soft)}
+    .principle-row p{margin:0;font-size:clamp(18px,2.5vw,26px);letter-spacing:-.02em}
+    .decision-switch{margin-top:70px;padding:clamp(26px,5vw,56px);border-radius:var(--radius);position:relative;overflow:hidden}
+    .decision-track{display:grid;grid-template-columns:1fr 70px 1fr;align-items:center;gap:24px}
+    .decision-side{padding:20px 0}
+    .decision-side small{display:block;text-transform:uppercase;letter-spacing:.13em;color:var(--soft);margin-bottom:10px}
+    .decision-side strong{font-size:clamp(27px,4vw,46px);letter-spacing:-.05em;font-weight:500}
+    .decision-side.old{text-decoration:line-through;color:var(--soft)}
+    .decision-arrow{height:1px;background:var(--ink);position:relative}
+    .decision-arrow::after{content:"";position:absolute;right:0;top:-5px;width:10px;height:10px;border-top:1px solid;border-right:1px solid;transform:rotate(45deg)}
+    .message-chip{margin-top:30px;padding:14px 18px;border-radius:18px;background:var(--glass-strong);width:fit-content;max-width:100%;font-size:14px}
+    .message-chip::before{content:"“"}.message-chip::after{content:"”"}
+    .metric-note{margin-top:24px;color:var(--soft);font-size:13px}
+    .synthesis{padding-top:130px}
+    .cluster-map{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:60px}
+    .cluster{min-height:210px;padding:24px;border-top:1px solid var(--ink);position:relative;transition:.3s}
+    .cluster:hover{background:rgba(255,255,255,.38);transform:translateY(-4px)}
+    .cluster small{font-variant-numeric:tabular-nums;color:var(--soft)}
+    .cluster h3{margin:36px 0 10px}
+    .cluster p{font-size:14px;color:var(--soft);margin:0}
+    .pillars{display:grid;grid-template-columns:1fr minmax(260px,420px) 1fr;align-items:center;gap:28px;margin:120px 0}
+    .pillar-list{display:grid;gap:40px}
+    .pillar-item span{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--soft)}
+    .pillar-item h3{font-size:clamp(26px,4vw,46px);margin:7px 0 0;font-weight:500}
+    .cycle{aspect-ratio:1;border:1px solid var(--line);border-radius:50%;position:relative;display:grid;place-items:center;text-align:center;padding:70px}
+    .cycle::before,.cycle::after{content:"";position:absolute;border-radius:50%;border:1px solid var(--line)}
+    .cycle::before{inset:13%}.cycle::after{inset:28%}
+    .cycle span{position:relative;z-index:2;font-size:14px;line-height:1.4}
+    .cycle .dot{position:absolute;width:13px;height:13px;background:var(--ink);border-radius:50%;left:2%;top:43%;box-shadow:0 0 0 7px var(--paper)}
+    .cycle .dot:nth-of-type(2){left:auto;right:16%;top:7%}
+    .cycle .dot:nth-of-type(3){left:auto;right:14%;top:auto;bottom:8%}
+    .positioning{font-size:clamp(28px,5vw,60px);line-height:1.03;letter-spacing:-.05em;max-width:980px;margin:0 auto;text-align:center}
+    .positioning em{font-style:normal;color:transparent;-webkit-text-stroke:1px var(--ink)}
+    .scope-header{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:38px}
+    .scope-header p{max-width:500px;margin:0;color:var(--soft)}
+    .scope-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:26px}
+    .scope-tab{border:1px solid var(--line);border-radius:999px;background:transparent;padding:11px 16px;cursor:pointer}
+    .scope-tab[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+    .scope-grid{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ink)}
+    .scope-col{padding:22px;border-right:1px solid var(--line);min-height:430px}
+    .scope-col:last-child{border-right:0}
+    .scope-col header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+    .scope-col h3{margin:0;font-size:18px}.scope-col header span{font-size:11px;color:var(--soft)}
+    .scope-col ul{padding:0;margin:0;list-style:none}
+    .scope-col li{padding:13px 0;border-bottom:1px solid var(--hair);font-size:14px;line-height:1.4;transition:.25s}
+    .scope-grid.filtered .scope-col:not(.selected){opacity:.18}
+    .scope-grid.filtered .scope-col:not(.selected) li{filter:blur(1px)}
+    .scope-col.selected{background:rgba(255,255,255,.42)}
+    .deferred{margin-top:80px;display:grid;grid-template-columns:1fr 2fr;gap:60px}
+    .deferred-list{border-top:1px solid var(--ink)}
+    .deferred-item{display:grid;grid-template-columns:52px 1fr;gap:16px;padding:19px 0;border-bottom:1px solid var(--line)}
+    .deferred-item span{color:var(--soft);font-size:11px}
+    .deferred-item p{margin:0}
+    .finale{padding:150px 0 80px}
+    .final-card{border-radius:40px;padding:clamp(34px,7vw,90px);text-align:center;position:relative;overflow:hidden}
+    .final-card .line{width:1px;height:90px;background:var(--line);margin:0 auto 30px}
+    .final-card h2{font-size:clamp(48px,9vw,112px);margin-bottom:28px}
+    .final-card p{max-width:670px;margin:0 auto;font-size:18px}
+    .final-route{margin:50px auto 0;display:flex;justify-content:center;gap:12px;align-items:center;flex-wrap:wrap}
+    .final-route span{border:1px solid var(--line);border-radius:999px;padding:11px 15px;font-size:12px}
+    .final-route i{width:28px;height:1px;background:var(--ink)}
+    footer{display:flex;justify-content:space-between;gap:20px;border-top:1px solid var(--line);padding:24px 0 40px;font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.12em}
+    .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+    .reveal.seen{opacity:1;transform:none}
+    @media (max-width:820px){
+      .chapter-head{grid-template-columns:1fr;gap:16px}.chapter-no{width:130px}
+      .round-stage{display:flex;flex-direction:column;gap:12px;min-height:0}.round-core{margin-bottom:16px}.orbit{display:none}.idea-card{position:static;width:100%;transform:none!important}
+      .stimulus-lab{grid-template-columns:1fr}.stimulus-buttons{position:static;flex-direction:row;overflow:auto}.stimulus-button{flex:0 0 auto;gap:20px}
+      .role-screen{grid-template-columns:1fr}.phone{order:-1}
+      .cluster-map{grid-template-columns:repeat(2,1fr)}
+      .pillars{grid-template-columns:1fr}.cycle{max-width:390px;width:100%;margin:auto}.pillar-list{grid-template-columns:repeat(2,1fr)}
+      .scope-grid{grid-template-columns:repeat(2,1fr)}.scope-col:nth-child(2){border-right:0}.scope-col{min-height:0;border-bottom:1px solid var(--line)}
+      .deferred{grid-template-columns:1fr;gap:24px}
+    }
+    @media (max-width:560px){
+      .shell{width:min(100% - 22px,1180px)}section{padding:72px 0}.hero{min-height:88svh;padding-top:70px}
+      .hero h1{font-size:clamp(48px,18vw,78px)}.hero-orb{top:27%;right:-16%;opacity:.65}
+      .hero-deck{display:block}.hero-deck p{font-size:16px}.route{justify-content:flex-start;margin-top:24px}
+      .story-nav{top:6px;margin-bottom:12px}.story-nav a{padding:9px 11px}
+      .pulse-line{grid-template-columns:1fr 1fr}.stimulus-scene{min-height:430px}.stimulus-word{font-size:52px}
+      .role-frame{padding:6px}.role-screen{padding:18px}.phone{width:100%;max-width:310px}
+      .decision-track{grid-template-columns:1fr}.decision-arrow{width:1px;height:50px;margin-left:12px}.decision-arrow::after{right:-5px;top:auto;bottom:0;transform:rotate(135deg)}
+      .cluster-map{grid-template-columns:1fr}.cluster{min-height:0}.pillar-list{grid-template-columns:1fr}.pillars{margin:80px 0}.cycle{padding:54px}
+      .scope-header{display:block}.scope-header p{margin-top:16px}.scope-grid{grid-template-columns:1fr}.scope-col{border-right:0!important}
+      .final-route i{width:8px}footer{display:block}footer span{display:block;margin-bottom:8px}
+    }
+    @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.hero-orb{animation:none}.reveal{transition:none}.stimulus-pane.active,.role-copy.active{animation:none}}
+  </style>
+</head>
+<body>
+  <main>
+    <header class="hero shell" id="top">
+      <div class="hero-top"><div class="mark"><span class="mark-dot"></span>Creative Partner</div><div class="date">31.07—01.08.2026</div></div>
+      <div class="hero-orb glass" aria-hidden="true"></div>
+      <div class="hero-copy">
+        <p class="eyebrow">Сессия концепции MVP</p>
+        <h1><span>Одна ссылка.</span><span class="quiet">Один каталог.</span><span>Один контакт.</span></h1>
+        <div class="hero-deck">
+          <p>Минималистичная персональная витрина для предпринимателей и самозанятых, которые продают через социальные сети и не хотят осваивать маркетплейсы.</p>
+          <div class="route" aria-label="Ключевой путь"><span>соцсеть</span><i></i><span>витрина</span><i></i><span>мессенджер</span></div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="story-nav glass" aria-label="Навигация по сессии">
+      <a href="#round">01 Круг идей</a><a href="#random">02 Стимулы</a><a href="#roles">03 Роли</a><a href="#principles">04 Принципы</a><a href="#synthesis">05 Синтез</a><a href="#scope">06 MVP</a>
+    </nav>
+
+    <section id="round">
+      <div class="shell">
+        <div class="chapter-head reveal"><div class="chapter-no">01 / 06</div><div><p class="eyebrow">Brain Writing Round Robin</p><h2>Идея передаётся дальше — и становится системой.</h2><p class="intro">Быстрое добавление выросло в единый входящий лоток импорта, отдельные ссылки по каналам и «Пульс магазина» с рекомендациями из реального поведения покупателей.</p></div></div>
+        <div class="round-stage reveal" aria-label="Круг ключевых идей Brain Writing">
+          <div class="orbit" aria-hidden="true"></div>
+          <div class="round-core glass"><div><strong>10 минут</strong><span class="muted">до нового магазина</span></div></div>
+          <article class="idea-card glass"><div class="tag">Быстрый старт</div><p>Добавление товара ощущается как публикация поста: фото, название, цена или «по запросу», короткое описание — готово.</p></article>
+          <article class="idea-card glass"><div class="tag">Импорт</div><p>Excel, ссылки и скриншоты попадают в единый лоток и превращаются в черновики для проверки.</p></article>
+          <article class="idea-card glass"><div class="tag">Каналы</div><p>Отдельная короткая ссылка для каждого канала показывает источник переходов и обращений.</p></article>
+          <article class="idea-card glass"><div class="tag">Поведение</div><p>Воронка товара: открыли карточку → пролистали фотографии → дочитали описание → начали диалог.</p></article>
+        </div>
+        <div class="pulse-line reveal">
+          <div><b>Узкое место</b><span>Совет выводится из поведения, а не из универсального шаблона.</span></div>
+          <div><b>Первая фотография</b><span>Заменить, если интерес теряется в начале.</span></div>
+          <div><b>Описание и цена</b><span>Сократить или уточнить в зависимости от воронки.</span></div>
+          <div><b>Источник</b><span>Активнее публиковать ссылку в результативном канале.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="random">
+      <div class="shell">
+        <div class="chapter-head reveal"><div class="chapter-no">02 / 06</div><div><p class="eyebrow">Random Stimulation</p><h2>Случайные образы открывают будущие слои продукта.</h2><p class="intro">Почтовый ящик оказался слишком сложным. Конструктор и паспорт дали яснее увидеть модульность, монетизацию и доверие — но не раздувать ими MVP.</p></div></div>
+        <div class="stimulus-lab reveal">
+          <div class="stimulus-buttons" role="tablist" aria-label="Случайные стимулы">
+            <button class="stimulus-button" type="button" role="tab" aria-selected="true" aria-controls="stim-mail" data-stim="mail"><span>Почтовый ящик</span><small>01</small></button>
+            <button class="stimulus-button" type="button" role="tab" aria-selected="false" aria-controls="stim-build" data-stim="build"><span>Конструктор</span><small>02</small></button>
+            <button class="stimulus-button" type="button" role="tab" aria-selected="false" aria-controls="stim-pass" data-stim="pass"><span>Паспорт</span><small>03</small></button>
+          </div>
+          <div class="stimulus-scene glass">
+            <div class="stimulus-pane active" id="stim-mail" data-pane="mail"><div class="mail-lines" aria-hidden="true"></div><div><div class="stimulus-word">Сводка</div><p>Ежедневно: какие товары вызвали интерес, откуда пришли посетители, где узкое место и какой один шаг сделать сегодня.</p><div class="foot">Стимул признан слишком сложным для следующей идеи.</div></div></div>
+            <div class="stimulus-pane" id="stim-build" data-pane="build"><div class="blocks" aria-hidden="true"></div><div><div class="stimulus-word">Блоки</div><p>История продавца, каталог, отзывы, условия заказа и контакты. В MVP — готовый минимальный набор; дополнительные блоки и оформление позже становятся основой монетизации.</p><div class="foot">Оплата, доставка, статус заказа и фискализация — будущий модуль «Сделка».</div></div></div>
+            <div class="stimulus-pane" id="stim-pass" data-pane="pass"><div class="seal" aria-hidden="true">контакт<br>подтверждён</div><div><div class="stimulus-word">Доверие</div><p>Подтверждённые контакты, дата регистрации, скорость ответа и прозрачные условия помогают решиться на обращение.</p><div class="foot">Рейтинг и отзывы — после MVP и только после подтверждения сделки.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="roles">
+      <div class="shell">
+        <div class="chapter-head reveal"><div class="chapter-no">03 / 06</div><div><p class="eyebrow">Role Playing</p><h2>С телефона — глазами двух людей.</h2><p class="intro">Покупателю нужны ясность и короткий путь к контакту. Продавцу — запуск без повторного ручного ввода каталога и простая мобильная очередь проверки.</p></div></div>
+        <div class="role-frame glass reveal">
+          <div class="role-top" role="tablist" aria-label="Выбор роли">
+            <button class="role-toggle" type="button" role="tab" aria-selected="true" data-role="buyer">Покупатель</button>
+            <button class="role-toggle" type="button" role="tab" aria-selected="false" data-role="seller">Продавец</button>
+          </div>
+          <div class="role-screen">
+            <div>
+              <div class="role-copy active" data-role-copy="buyer"><blockquote>«Покажите цену, наличие, получение и время ответа. Не заставляйте меня регистрироваться ради вопроса».</blockquote><ul><li>Контакт прямо из каталога — для готового намерения</li><li>Фото и описание в карточке — когда нужны подробности</li><li>Список или сетка по два товара в ряд</li></ul></div>
+              <div class="role-copy" data-role-copy="seller"><blockquote>«Если снова вносить весь ассортимент вручную, я брошу запуск».</blockquote><ul><li>Стартовый вопрос: «Где ваши товары сейчас?»</li><li>Черновики за пять минут: название, цена, описание</li><li>Ручная проверка и явная публикация каждой карточки</li></ul></div>
+            </div>
+            <div class="phone" aria-label="Эскиз мобильной витрины">
+              <div class="phone-screen"><div class="phone-bar"><span>9:41</span><span>● ● ●</span></div><div class="store-head"><div class="avatar"></div><div><strong>Название магазина</strong><small>Короткое описание продавца</small></div></div><div class="view-switch"><button class="on" type="button" aria-label="Показать сеткой" data-view="grid">▦</button><button type="button" aria-label="Показать списком" data-view="list">☰</button></div><div class="products" id="products"><div class="product"><div class="product-img"></div><div><b>Название товара</b><span>Цена</span><button type="button">Связаться</button></div></div><div class="product"><div class="product-img"></div><div><b>Название товара</b><span>По запросу</span><button type="button">Связаться</button></div></div><div class="product"><div class="product-img"></div><div><b>Название товара</b><span>Цена</span><button type="button">Связаться</button></div></div><div class="product"><div class="product-img"></div><div><b>Название товара</b><span>Цена</span><button type="button">Связаться</button></div></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="principles">
+      <div class="shell">
+        <div class="chapter-head reveal"><div class="chapter-no">04 / 06</div><div><p class="eyebrow">First Principles Thinking</p><h2>Убрать всё, что не нужно для начала разговора.</h2><p class="intro">Решение вернулось к базовым фактам и отделило неизменное действие «Связаться с продавцом» от канала доставки сообщения.</p></div></div>
+        <div class="principles reveal">
+          <div class="principle-row"><span class="num">01</span><p>Аудитория приходит из внешних социальных сетей.</p></div>
+          <div class="principle-row"><span class="num">02</span><p>Покупатель действует с телефона.</p></div>
+          <div class="principle-row"><span class="num">03</span><p>Цель MVP — понятный товар и начало диалога.</p></div>
+          <div class="principle-row"><span class="num">04</span><p>Оплата и доставка остаются вне сервиса.</p></div>
+          <div class="principle-row"><span class="num">05</span><p>Продавец имеет до нескольких десятков товаров и не хочет повторно вводить каталог.</p></div>
+        </div>
+        <div class="decision-switch glass reveal">
+          <p class="eyebrow">Ключевой поворот</p>
+          <div class="decision-track"><div class="decision-side old"><small>Отказались</small><strong>Внутренний чат</strong></div><div class="decision-arrow" aria-hidden="true"></div><div class="decision-side"><small>Выбрали для MVP</small><strong>Внешний мессенджер</strong></div></div>
+          <div class="message-chip">Здравствуйте! Меня интересует «Название товара» — ссылка на карточку</div>
+          <p class="metric-note">Аккаунт покупателю не нужен. Сервис измеряет нажатие «Связаться», но без интеграции не знает, было ли сообщение отправлено и состоялась ли сделка.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="synthesis" class="synthesis">
+      <div class="shell">
+        <div class="chapter-head reveal"><div class="chapter-no">05 / 06</div><div><p class="eyebrow">Affinity Clustering</p><h2>Шесть потоков сходятся в одну концепцию.</h2><p class="intro">Кластеры точно сохраняют обещание продукта, путь продавца, публичную витрину, контакт, аналитику и пространство для развития.</p></div></div>
+        <div class="cluster-map reveal">
+          <article class="cluster"><small>01</small><h3>Обещание</h3><p>Mobile-first витрина по одной кастомной ссылке для малых социальных продавцов.</p></article>
+          <article class="cluster"><small>02</small><h3>Быстрый запуск</h3><p>Профиль, ручное добавление, импорт и проверяемые черновики.</p></article>
+          <article class="cluster"><small>03</small><h3>Витрина</h3><p>Компактная шапка, каталог, карточка с фотографиями и быстрый контакт.</p></article>
+          <article class="cluster"><small>04</small><h3>Контакт</h3><p>Внешний мессенджер с предзаполненным сообщением и ссылкой на товар.</p></article>
+          <article class="cluster"><small>05</small><h3>Кабинет</h3><p>Дневные просмотры, интерес к товарам, нажатия связи, источники и предпросмотр.</p></article>
+          <article class="cluster"><small>06</small><h3>После MVP</h3><p>Советы, кастомизация, транзакции, отзывы и механики доверия.</p></article>
+        </div>
+        <div class="pillars reveal">
+          <div class="pillar-list"><div class="pillar-item"><span>Опора 01</span><h3>Персональная витрина</h3></div><div class="pillar-item"><span>Опора 02</span><h3>Аналитика публикаций</h3></div></div>
+          <div class="cycle" aria-label="Цикл трёх опор"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>создать →<br>распространить →<br>увидеть отклик →<br>улучшить</span></div>
+          <div class="pillar-list"><div class="pillar-item"><span>Опора 03</span><h3>Mobile-first</h3></div><div class="pillar-item"><span>Цикл</span><h3>Следующая публикация</h3></div></div>
+        </div>
+        <p class="positioning reveal">Не облегчённый маркетплейс, а <em>mobile-first конверсионный слой</em> между социальной сетью и мессенджером продавца.</p>
+      </div>
+    </section>
+
+    <section id="scope">
+      <div class="shell">
+        <div class="scope-header reveal"><div><p class="eyebrow">MoSCoW · принятая граница</p><h2>MVP остаётся лёгким.</h2></div><p>Фокус: mobile-first витрина, небольшой каталог, переход во внешний мессенджер и базовая аналитика.</p></div>
+        <div class="scope-tabs reveal" role="tablist" aria-label="Подсветить категорию MoSCoW"><button class="scope-tab" type="button" aria-selected="true" data-scope="all">Вся граница</button><button class="scope-tab" type="button" aria-selected="false" data-scope="must">Must</button><button class="scope-tab" type="button" aria-selected="false" data-scope="should">Should</button><button class="scope-tab" type="button" aria-selected="false" data-scope="could">Could</button><button class="scope-tab" type="button" aria-selected="false" data-scope="wont">Won’t</button></div>
+        <div class="scope-grid reveal" id="scope-grid">
+          <article class="scope-col" data-scope-col="must"><header><h3>Must</h3><span>ядро</span></header><ul><li>Профиль продавца и персональная ссылка</li><li>Ручное управление небольшим каталогом</li><li>Публичная mobile-first витрина</li><li>Карточки с фото, описанием и ценой</li><li>«Связаться» через внешний мессенджер</li><li>Дневные просмотры как главная метрика</li><li>Базовые просмотры товаров, клики связи и источники</li></ul></article>
+          <article class="scope-col" data-scope-col="should"><header><h3>Should</h3><span>стремиться</span></header><ul><li>Базовый импорт Excel или CSV</li><li>Черновики с ручной проверкой</li><li>Явная публикация продавцом</li><li>Предпросмотр витрины глазами покупателя</li><li>Отдельные ссылки для каналов трафика</li></ul></article>
+          <article class="scope-col" data-scope-col="could"><header><h3>Could</h3><span>после ядра</span></header><ul><li>Расширенная кастомизация магазина</li><li>Дополнительные визуальные блоки</li><li>Расширенная аналитика и советы</li><li>Механики доверия</li></ul></article>
+          <article class="scope-col" data-scope-col="wont"><header><h3>Won’t</h3><span>не в MVP</span></header><ul><li>AI-импорт из ссылок и скриншотов</li><li>Внутренний чат и аккаунт покупателя</li><li>Оплата, доставка и фискализация</li><li>Рейтинг и отзывы</li><li>Расследования и расширенная модерация</li><li>Подтверждение сделки</li></ul></article>
+        </div>
+        <div class="deferred reveal"><div><p class="eyebrow">Отложенные идеи</p><h2>Не потеряны.<br>Просто позже.</h2></div><div class="deferred-list"><div class="deferred-item"><span>01</span><p>AI-распознавание ассортимента по ссылкам и скриншотам.</p></div><div class="deferred-item"><span>02</span><p>Модуль «Сделка»: онлайн-оплата, доставка, статус заказа и фискализация.</p></div><div class="deferred-item"><span>03</span><p>Рейтинг продавца, отзывы по товарам и подтверждение сделки.</p></div><div class="deferred-item"><span>04</span><p>Расширенная аналитика поведения и диагностические советы для роста продаж.</p></div><div class="deferred-item"><span>05</span><p>Кастомные блоки и оформление как будущая модель монетизации.</p></div></div></div>
+      </div>
+    </section>
+
+    <section class="finale">
+      <div class="shell"><div class="final-card glass reveal"><div class="line"></div><p class="eyebrow">Концепция MVP</p><h2>Публикация<br>продолжается.</h2><p>Продавец с телефона создаёт персональную витрину, распространяет ссылки через публикации, видит отклик аудитории и улучшает следующий выход к покупателю.</p><div class="final-route"><span>Социальная сеть</span><i></i><span>Персональная витрина</span><i></i><span>Внешний мессенджер</span></div></div></div>
+    </section>
+  </main>
+  <footer class="shell"><span>Brainstorming keepsake</span><span>Минималистичная витрина социальных продавцов</span></footer>
+  <script>
+    (() => {
+      const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+      const reveals = $$('.reveal');
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('seen'); observer.unobserve(entry.target); } });
+        }, { threshold: .12 });
+        reveals.forEach(el => observer.observe(el));
+      } else reveals.forEach(el => el.classList.add('seen'));
+
+      const navLinks = $$('.story-nav a');
+      const sections = navLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+      const syncNav = () => {
+        let current = sections[0];
+        sections.forEach(section => { if (section.getBoundingClientRect().top <= 150) current = section; });
+        navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+      };
+      window.addEventListener('scroll', syncNav, { passive:true }); syncNav();
+
+      $$('.stimulus-button').forEach(button => button.addEventListener('click', () => {
+        $$('.stimulus-button').forEach(b => b.setAttribute('aria-selected', String(b === button)));
+        $$('.stimulus-pane').forEach(pane => pane.classList.toggle('active', pane.dataset.pane === button.dataset.stim));
+      }));
+
+      $$('.role-toggle').forEach(button => button.addEventListener('click', () => {
+        $$('.role-toggle').forEach(b => b.setAttribute('aria-selected', String(b === button)));
+        $$('.role-copy').forEach(copy => copy.classList.toggle('active', copy.dataset.roleCopy === button.dataset.role));
+      }));
+
+      const products = document.getElementById('products');
+      $$('.view-switch button').forEach(button => button.addEventListener('click', () => {
+        $$('.view-switch button').forEach(b => b.classList.toggle('on', b === button));
+        products.classList.toggle('list', button.dataset.view === 'list');
+      }));
+
+      const scopeGrid = document.getElementById('scope-grid');
+      $$('.scope-tab').forEach(button => button.addEventListener('click', () => {
+        $$('.scope-tab').forEach(b => b.setAttribute('aria-selected', String(b === button)));
+        const choice = button.dataset.scope;
+        scopeGrid.classList.toggle('filtered', choice !== 'all');
+        $$('.scope-col', scopeGrid).forEach(col => col.classList.toggle('selected', choice !== 'all' && col.dataset.scopeCol === choice));
+      }));
+    })();
+  </script>
+</body>
+</html>
