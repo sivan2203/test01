@@ -28,6 +28,8 @@ const root = process.cwd();
 const requiredPaths = [
   "src/app/page.tsx",
   "src/app/(public)/[storeSlug]/page.tsx",
+  "src/app/(public)/[storeSlug]/not-found.tsx",
+  "src/app/(public)/[storeSlug]/error.tsx",
   "src/app/(seller)/seller/(admin)/layout.tsx",
   "src/app/(seller)/seller/(admin)/page.tsx",
   "src/app/(seller)/seller/(admin)/products/page.tsx",
@@ -61,6 +63,7 @@ const requiredPaths = [
   "src/features/store/avatar.ts",
   "src/features/store/form-state.ts",
   "src/features/store/public-catalog.ts",
+  "src/features/store/public-storefront-image.tsx",
   "src/features/store/public-storefront-shell.tsx",
   "src/features/store/public-queries.ts",
   "src/features/store/queries.ts",
@@ -309,6 +312,42 @@ if (
   /create\s+table[\s\S]*(slug_history|slug_alias|redirect)/i.test(storeSlugMigration)
 ) {
   console.error("Foundation smoke check failed. Store slug migration boundaries are incomplete.");
+  process.exit(1);
+}
+
+const publicStoreAvatarMigrationName = readdirSync(migrationDir).find((fileName) =>
+  fileName.endsWith("_public_store_avatar.sql"),
+);
+if (!publicStoreAvatarMigrationName) {
+  console.error("Foundation smoke check failed. Public store avatar migration is missing.");
+  process.exit(1);
+}
+
+const publicStoreAvatarMigration = readFileSync(
+  join(migrationDir, publicStoreAvatarMigrationName),
+  "utf8",
+);
+const requiredPublicStoreAvatarMigrationSnippets = [
+  "get_public_store_by_slug(store_slug text)",
+  "drop function if exists public.get_public_store_by_slug(text)",
+  "avatar_path text",
+  "security definer",
+  "set search_path = public",
+  "is_public_store_avatar_path",
+  "store_avatars_select_public",
+  "bucket_id = 'store-avatars'",
+  "to anon, authenticated",
+  "stores.slug is not null",
+  "stores.avatar_path = object_path",
+  "revoke all on function public.is_public_store_avatar_path(text) from public",
+];
+if (
+  requiredPublicStoreAvatarMigrationSnippets.some(
+    (snippet) => !publicStoreAvatarMigration.includes(snippet),
+  ) ||
+  /product-media[\s\S]*public\s*=\s*true/i.test(publicStoreAvatarMigration)
+) {
+  console.error("Foundation smoke check failed. Public store avatar storage boundary is incomplete.");
   process.exit(1);
 }
 
@@ -571,9 +610,21 @@ const publicStoreQuerySource = readFileSync(
   join(root, "src/features/store/public-queries.ts"),
   "utf8",
 );
+const publicStoreNotFoundSource = readFileSync(
+  join(root, "src/app/(public)/[storeSlug]/not-found.tsx"),
+  "utf8",
+);
+const publicStoreErrorSource = readFileSync(
+  join(root, "src/app/(public)/[storeSlug]/error.tsx"),
+  "utf8",
+);
+const publicStorefrontImageSource = readFileSync(
+  join(root, "src/features/store/public-storefront-image.tsx"),
+  "utf8",
+);
 if (
   !publicStorePageSource.includes("getPublicStoreBySlug") ||
-  !publicStorePageSource.includes("getPublishedPublicCatalogItemsForStore") ||
+  !publicStorePageSource.includes("getPublicCatalogItemsForStore") ||
   !publicStorePageSource.includes("PublicStorefrontShell") ||
   !publicStorePageSource.includes("notFound()") ||
   !publicStorePageSource.includes('storeResult.status === "error"') ||
@@ -586,7 +637,11 @@ if (
   publicStorePageSource.includes("variant=\"telegram\"") ||
   publicStorePageSource.includes("createSupabaseServiceRoleClient") ||
   publicStorePageSource.includes("service-role") ||
+  !publicStorePageSource.includes('catalogResult.status === "error"') ||
   !publicStoreQuerySource.includes("get_public_store_by_slug") ||
+  !publicStoreQuerySource.includes("avatar_path") ||
+  !publicStoreQuerySource.includes("avatarUrl") ||
+  !publicStoreQuerySource.includes("createSignedUrl") ||
   !publicStoreQuerySource.includes('status: "found"') ||
   !publicStoreQuerySource.includes('status: "not_found"') ||
   !publicStoreQuerySource.includes('status: "error"') ||
@@ -602,10 +657,23 @@ if (
 }
 
 if (
+  !publicStoreNotFoundSource.includes("Витрина не найдена") ||
+  publicStoreNotFoundSource.includes("seller") ||
+  !publicStoreErrorSource.includes("Витрина временно недоступна") ||
+  !publicStoreErrorSource.includes('"use client"') ||
+  !publicStorefrontImageSource.includes('"use client"') ||
+  !publicStorefrontImageSource.includes("onError") ||
+  !publicStorefrontImageSource.includes("Нет фото")
+) {
+  console.error("Foundation smoke check failed. Public storefront fallback states are incomplete.");
+  process.exit(1);
+}
+
+if (
   !previewStorePageSource.includes("getCurrentSellerStoreProfile") ||
   !previewStorePageSource.includes("getPublishedPublicCatalogItemsForStore") ||
   !previewStorePageSource.includes("buyerFacingStore") ||
-  previewStorePageSource.includes("avatarUrl") ||
+  !previewStorePageSource.includes("avatarUrl") ||
   !previewStorePageSource.includes("PublicStorefrontShell") ||
   !previewStorePageSource.includes('href="/seller/store"') ||
   !previewStorePageSource.includes("Режим предпросмотра") ||
@@ -621,7 +689,7 @@ if (
 if (
   !publicStorefrontShellSource.includes("previewIndicator") ||
   !publicStorefrontShellSource.includes("catalogItems") ||
-  publicStorefrontShellSource.includes("avatarUrl") ||
+  !publicStorefrontShellSource.includes("avatarUrl") ||
   !publicCatalogSource.includes('import "server-only"') ||
   !publicCatalogSource.includes("getPublishedPublicCatalogItemsForStore") ||
   !publicCatalogSource.includes("get_public_catalog_items_for_store") ||
@@ -638,8 +706,13 @@ if (
   publicStorefrontShellSource.includes("analytics.track") ||
   publicStorefrontShellSource.includes("navigator.sendBeacon") ||
   publicStorefrontShellSource.includes("fetch(\"/api/analytics") ||
-  publicStorefrontShellSource.includes("catalogItems.map") ||
-  publicStorefrontShellSource.includes("<article")
+  !publicStorefrontShellSource.includes("catalogItems.map") ||
+  !publicStorefrontShellSource.includes("<article") ||
+  !publicStorefrontShellSource.includes("availabilityStatus") ||
+  !publicStorefrontShellSource.includes("getProductPriceLabel") ||
+  !publicStorefrontShellSource.includes("Нет фото") ||
+  publicStorefrontShellSource.includes("recordAnalytics") ||
+  publicStorefrontShellSource.includes("navigator.sendBeacon")
 ) {
   console.error("Foundation smoke check failed. Preview/public storefront shell boundaries are incomplete.");
   process.exit(1);

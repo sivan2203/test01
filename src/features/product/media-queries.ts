@@ -11,6 +11,8 @@ import { getCurrentSellerStoreForProducts, isProductId } from "./queries";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
+const PUBLIC_MEDIA_SIGNING_BATCH_SIZE = 50;
+
 export type ProductMediaRow = {
   id: string;
   product_id: string;
@@ -214,10 +216,40 @@ export async function getPublishedProductMediaForCatalog(
 
   if (error) throw new Error("Published product media lookup failed.");
 
-  const grouped = new Map<string, ProductMedia[]>();
   const mediaRows = Array.isArray(rows) ? rows : [];
-  for (const row of mediaRows) {
-    const url = await createSignedProductMediaUrl(supabase, row.storage_path);
+  if (mediaRows.length === 0) return new Map<string, ProductMedia[]>();
+
+  const signedUrlsByIndex: Array<string | undefined> = Array(
+    mediaRows.length,
+  ).fill(undefined);
+
+  for (
+    let start = 0;
+    start < mediaRows.length;
+    start += PUBLIC_MEDIA_SIGNING_BATCH_SIZE
+  ) {
+    const batch = mediaRows.slice(start, start + PUBLIC_MEDIA_SIGNING_BATCH_SIZE);
+
+    try {
+      const { data: signedUrls } = await supabase.storage
+        .from(PRODUCT_MEDIA_BUCKET)
+        .createSignedUrls(
+          batch.map((row) => row.storage_path),
+          PRODUCT_MEDIA_SIGNED_URL_TTL_SECONDS,
+        );
+
+      for (const [batchIndex, signedUrl] of (signedUrls ?? []).entries()) {
+        signedUrlsByIndex[start + batchIndex] = signedUrl?.signedUrl ?? undefined;
+      }
+    } catch {
+      // Keep catalog data visible even when a media batch is temporarily unavailable.
+      continue;
+    }
+  }
+
+  const grouped = new Map<string, ProductMedia[]>();
+  for (const [index, row] of mediaRows.entries()) {
+    const url = signedUrlsByIndex[index];
     if (!url) continue;
     const current = grouped.get(row.product_id) ?? [];
     current.push(mapProductMediaRow(row, url));

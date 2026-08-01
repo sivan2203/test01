@@ -74,6 +74,7 @@ export default async function SellerStorePreviewPage() {
   const buyerFacingStore = {
     slug: store.slug,
     name: store.name,
+    avatarUrl: store.avatarUrl,
     description: store.description,
     additionalInfo: store.additionalInfo,
   };

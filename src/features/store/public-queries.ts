@@ -1,11 +1,13 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { STORE_AVATAR_BUCKET } from "./avatar";
 import { normalizeStoreSlug, validateStoreSlug } from "./schema";
 
 type PublicStoreRow = {
   slug: string;
   name: string;
+  avatar_path: string | null;
   description: string | null;
   additional_info: string | null;
   timezone: string;
@@ -14,6 +16,7 @@ type PublicStoreRow = {
 export type PublicStoreProfile = {
   slug: string;
   name: string;
+  avatarUrl?: string;
   description: string;
   additionalInfo: string;
   timezone: string;
@@ -60,7 +63,25 @@ export async function getPublicStoreBySlug(
       return { status: "not_found" };
     }
 
-    return { status: "found", store: mapPublicStoreRow(data) };
+    let avatarUrl: string | undefined;
+    if (data.avatar_path) {
+      try {
+        const { data: signedAvatar } = await supabase.storage
+          .from(STORE_AVATAR_BUCKET)
+          .createSignedUrl(data.avatar_path, 60 * 60);
+        avatarUrl = signedAvatar?.signedUrl;
+      } catch {
+        avatarUrl = undefined;
+      }
+    }
+
+    return {
+      status: "found",
+      store: {
+        ...mapPublicStoreRow(data),
+        avatarUrl,
+      },
+    };
   } catch {
     return { status: "error" };
   }
