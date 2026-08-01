@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code review of 2-3-edit-product-and-manage-publication-state (2026-08-01)
+
+- Direct deletion of the last `product_media` row for a published product remains possible through the pre-existing media-owner RLS policy; the current story did not introduce that policy or its bypass.
+
 ## Deferred from: code review of 2-2-manage-product-photos (2026-08-01)
 
 - Publication-readiness guard and media editing for already published products are deferred to Story 2.3 because publication transitions входят в scope Story 2.3.

@@ -11,6 +11,13 @@ import {
   validateProductMediaFile,
   validateProductMediaSignature,
 } from "../src/features/product/media-schema.ts";
+import {
+  PRODUCT_STATUS_DELETED,
+  PRODUCT_STATUS_HIDDEN,
+  PRODUCT_STATUS_PUBLISHED,
+  canTransitionProductStatus,
+  validateProductPublication,
+} from "../src/features/product/lifecycle.ts";
 
 const root = process.cwd();
 const requiredPaths = [
@@ -38,6 +45,9 @@ const requiredPaths = [
   "src/features/product/media-queries.ts",
   "src/features/product/media-schema.ts",
   "src/features/product/product-media-manager.tsx",
+  "src/features/product/lifecycle.ts",
+  "src/features/product/product-lifecycle-context.tsx",
+  "src/features/product/product-state-control.tsx",
   "src/features/product/queries.ts",
   "src/features/product/schema.ts",
   "src/features/store/actions.ts",
@@ -396,7 +406,10 @@ if (
 const productFeatureFiles = [
   "src/features/product/actions.ts",
   "src/features/product/form-state.ts",
+  "src/features/product/lifecycle.ts",
+  "src/features/product/product-lifecycle-context.tsx",
   "src/features/product/product-form.tsx",
+  "src/features/product/product-state-control.tsx",
   "src/features/product/queries.ts",
   "src/features/product/schema.ts",
 ];
@@ -416,7 +429,12 @@ if (
   !productFeatureSource.includes("createSupabaseServerClient") ||
   !productFeatureSource.includes("getCurrentSellerStoreForProducts") ||
   !productFeatureSource.includes("createProductDraft") ||
-  !productFeatureSource.includes("updateProductDraft") ||
+  !productFeatureSource.includes("updateProduct") ||
+  !productFeatureSource.includes("publishProduct") ||
+  !productFeatureSource.includes("hideProduct") ||
+  !productFeatureSource.includes("deleteProduct") ||
+  !productFeatureSource.includes("canTransitionProductStatus") ||
+  !productFeatureSource.includes("validateProductPublication") ||
   !productFeatureSource.includes("useActionState") ||
   !productFeatureSource.includes('name="title"') ||
   !productFeatureSource.includes('name="priceMode"') ||
@@ -445,9 +463,10 @@ if (
   !sellerProductNewSource.includes("getCurrentSellerStoreProfile") ||
   !sellerProductNewSource.includes("getInitialProductDraftFormState(null)") ||
   !sellerProductNewSource.includes("ProductForm") ||
-  !sellerProductEditSource.includes("getSellerProductDraftById") ||
+  !sellerProductEditSource.includes("getSellerProductById") ||
   !sellerProductEditSource.includes("getInitialProductDraftFormState(productResult.product)") ||
   !sellerProductEditSource.includes("ProductForm") ||
+  !sellerProductEditSource.includes("ProductStateControl") ||
   !sellerProductEditSource.includes("productId={productResult.product.id}") ||
   sellerProductsSource.includes("createSupabaseServiceRoleClient") ||
   sellerProductsSource.includes("service-role") ||
@@ -649,6 +668,47 @@ if (
   process.exit(1);
 }
 
+const lifecycleMigrationName = readdirSync(migrationDir).find((fileName) =>
+  fileName.endsWith("_add_product_lifecycle_guards.sql"),
+);
+if (!lifecycleMigrationName) {
+  console.error("Foundation smoke check failed. Product lifecycle migration is missing.");
+  process.exit(1);
+}
+
+const lifecycleMigration = readFileSync(
+  join(migrationDir, lifecycleMigrationName),
+  "utf8",
+);
+const requiredLifecycleMigrationSnippets = [
+  "enforce_product_lifecycle_transition",
+  "app.product_lifecycle_transition",
+  "set_config('app.product_lifecycle_transition', 'on', true)",
+  "enforce_published_product_contract",
+  "min_sort_order",
+  "max_sort_order",
+  "products_lifecycle_transition_guard",
+  "products_publication_contract_guard",
+  "products_update_own",
+  "transition_product_lifecycle",
+  "get_public_product_for_store",
+  "product_media_storage_delete_owner",
+  "status <> 'deleted'",
+  "status = 'published'",
+  "published_product_requires_media",
+  "grant execute on function public.transition_product_lifecycle(uuid, text) to authenticated",
+];
+if (
+  requiredLifecycleMigrationSnippets.some(
+    (snippet) => !lifecycleMigration.includes(snippet),
+  ) ||
+  lifecycleMigration.includes("createSupabaseServiceRoleClient") ||
+  lifecycleMigration.includes("delete from storage.objects")
+) {
+  console.error("Foundation smoke check failed. Product lifecycle migration boundaries are incomplete.");
+  process.exit(1);
+}
+
 const mediaFeatureFiles = [
   "src/features/product/media-actions.ts",
   "src/features/product/media-queries.ts",
@@ -720,6 +780,68 @@ if (
   process.exit(1);
 }
 
+const validPublicationValues = {
+  title: "Товар для публикации",
+  priceMode: "fixed",
+  priceAmount: "2500",
+  description: "Описание товара",
+  availabilityStatus: "out_of_stock",
+};
+const validPublication = validateProductPublication(validPublicationValues, 1);
+const missingMediaPublication = validateProductPublication(validPublicationValues, 0);
+const invalidTitlePublication = validateProductPublication(
+  { ...validPublicationValues, title: "" },
+  1,
+);
+const invalidPricePublication = validateProductPublication(
+  { ...validPublicationValues, priceAmount: "0" },
+  1,
+);
+const invalidAvailabilityPublication = validateProductPublication(
+  { ...validPublicationValues, availabilityStatus: "unknown" },
+  1,
+);
+const lifecycleActionSource = readFileSync(
+  join(root, "src/features/product/actions.ts"),
+  "utf8",
+);
+const lifecycleEditorSource = readFileSync(
+  join(root, "src/features/product/product-state-control.tsx"),
+  "utf8",
+);
+const lifecycleContextSource = readFileSync(
+  join(root, "src/features/product/product-lifecycle-context.tsx"),
+  "utf8",
+);
+if (
+  !validPublication.isValid ||
+  validPublication.fieldErrors.media ||
+  missingMediaPublication.isValid ||
+  !missingMediaPublication.fieldErrors.media ||
+  invalidTitlePublication.isValid ||
+  !invalidTitlePublication.fieldErrors.title ||
+  invalidPricePublication.isValid ||
+  !invalidPricePublication.fieldErrors.priceAmount ||
+  invalidAvailabilityPublication.isValid ||
+  !invalidAvailabilityPublication.fieldErrors.availabilityStatus ||
+  !canTransitionProductStatus("draft", PRODUCT_STATUS_PUBLISHED) ||
+  !canTransitionProductStatus("hidden", PRODUCT_STATUS_PUBLISHED) ||
+  !canTransitionProductStatus("published", PRODUCT_STATUS_HIDDEN) ||
+  !canTransitionProductStatus("published", PRODUCT_STATUS_DELETED) ||
+  canTransitionProductStatus("deleted", PRODUCT_STATUS_PUBLISHED) ||
+  canTransitionProductStatus("published", "draft") ||
+  !lifecycleActionSource.includes('formData.get("confirmDelete")') ||
+  !lifecycleActionSource.includes("storage_cleanup_failed") ||
+  !lifecycleActionSource.includes('productStatus: PRODUCT_STATUS_DELETED') ||
+  !lifecycleEditorSource.includes("setLastAction") ||
+  !lifecycleEditorSource.includes("useProductLifecycleStatus") ||
+  !lifecycleContextSource.includes("ProductLifecycleProvider") ||
+  !lifecycleContextSource.includes("setProductStatus")
+) {
+  console.error("Foundation smoke check failed. Product lifecycle invariants are not executable.");
+  process.exit(1);
+}
+
 const publicCatalogMediaSource = readFileSync(
   join(root, "src/features/store/public-catalog.ts"),
   "utf8",
@@ -727,6 +849,8 @@ const publicCatalogMediaSource = readFileSync(
 if (
   !publicCatalogMediaSource.includes("media") ||
   !publicCatalogMediaSource.includes("getPublishedProductMediaForCatalog") ||
+  !publicCatalogMediaSource.includes("getPublicProductForStore") ||
+  !publicCatalogMediaSource.includes("get_public_product_for_store") ||
   publicCatalogMediaSource.includes("storage_path") ||
   publicCatalogMediaSource.includes("createSupabaseServiceRoleClient")
 ) {

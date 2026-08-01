@@ -5,12 +5,14 @@ import { useActionState, useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { createProductDraft, updateProductDraft } from "./actions";
+import { createProductDraft, updateProduct } from "./actions";
 import type { ProductDraftFormState } from "./form-state";
+import type { ProductStatus } from "./schema";
 
 type ProductFormProps = {
   initialState: ProductDraftFormState;
   productId?: string;
+  productStatus?: ProductStatus;
 };
 
 function FieldError({ message }: { message?: string }) {
@@ -22,18 +24,23 @@ function FieldError({ message }: { message?: string }) {
   );
 }
 
-export function ProductForm({ initialState, productId }: ProductFormProps) {
+export function ProductForm({
+  initialState,
+  productId,
+  productStatus = "draft",
+}: ProductFormProps) {
   const productDraftAction = productId
-    ? updateProductDraft.bind(null, productId)
+    ? updateProduct.bind(null, productId)
     : createProductDraft;
   const [state, submitProductDraft, isPending] = useActionState(
     productDraftAction,
     initialState,
   );
   const [priceMode, setPriceMode] = useState(state.values.priceMode);
+  const formKey = `${state.status}:${state.message}:${JSON.stringify(state.values)}`;
 
   return (
-    <form action={submitProductDraft} className="flex flex-col gap-5">
+    <form action={submitProductDraft} className="flex flex-col gap-5" key={formKey}>
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium" htmlFor="product-title">
           Название товара
@@ -142,9 +149,15 @@ export function ProductForm({ initialState, productId }: ProductFormProps) {
         </p>
       ) : null}
 
+      <FieldError message={state.fieldErrors.media} />
+
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Button className="w-full" disabled={isPending} type="submit">
-          {isPending ? "Сохраняем…" : "Сохранить черновик"}
+          {isPending
+            ? "Сохраняем…"
+            : productId && productStatus !== "draft"
+              ? "Сохранить изменения"
+              : "Сохранить черновик"}
         </Button>
         <Link
           className={cn(buttonVariants({ variant: "secondary" }), "w-full")}

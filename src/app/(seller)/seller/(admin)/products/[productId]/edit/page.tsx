@@ -3,9 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { GlassPanel } from "@/components/design-system";
 import { getInitialProductDraftFormState } from "@/features/product/form-state";
 import { ProductMediaManager } from "@/features/product/product-media-manager";
+import { ProductLifecycleProvider } from "@/features/product/product-lifecycle-context";
 import { ProductForm } from "@/features/product/product-form";
+import { ProductStateControl } from "@/features/product/product-state-control";
 import { getSellerProductMedia } from "@/features/product/media-queries";
-import { getSellerProductDraftById } from "@/features/product/queries";
+import { getSellerProductById } from "@/features/product/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +21,7 @@ export default async function EditProductDraftPage({
   params,
 }: EditProductDraftPageProps) {
   const { productId } = await params;
-  const productResult = await getSellerProductDraftById(productId);
+  const productResult = await getSellerProductById(productId);
 
   if (productResult.status === "unauthenticated") {
     redirect(`/seller/sign-in?from=/seller/products/${productId}/edit`);
@@ -37,7 +39,7 @@ export default async function EditProductDraftPage({
       <main>
         <GlassPanel className="p-5" role="alert">
           <p className="text-sm text-foreground/60">Редактирование товара</p>
-          <h1 className="mt-2 text-2xl font-semibold">Не удалось загрузить черновик</h1>
+          <h1 className="mt-2 text-2xl font-semibold">Не удалось загрузить товар</h1>
           <p className="mt-3 text-sm leading-6 text-foreground/70">
             Обновите страницу и попробуйте ещё раз. Мы не показываем пустую
             форму, если не уверены, что черновик загрузился корректно.
@@ -58,10 +60,12 @@ export default async function EditProductDraftPage({
     <main className="flex flex-col gap-4">
       <GlassPanel className="p-5">
         <p className="text-sm text-foreground/60">Редактирование товара</p>
-        <h1 className="mt-2 text-2xl font-semibold">Черновик товара</h1>
+        <h1 className="mt-2 text-2xl font-semibold">
+          Редактирование товара
+        </h1>
         <p className="mt-3 text-sm leading-6 text-foreground/70">
-          Проверьте карточку и сохраните изменения. В MVP черновик ещё не
-          публикуется на витрину.
+          Проверьте карточку, сохраните изменения и отдельно управляйте её
+          видимостью для покупателей.
         </p>
       </GlassPanel>
 
@@ -69,18 +73,30 @@ export default async function EditProductDraftPage({
         <ProductForm
           initialState={getInitialProductDraftFormState(productResult.product)}
           productId={productResult.product.id}
+          productStatus={productResult.product.status}
         />
       </GlassPanel>
 
-      <GlassPanel className="p-5">
-        <ProductMediaManager
-          initialError={mediaError}
-          initialMedia={initialMedia}
-          productId={productResult.product.id}
-          productStatus={productResult.product.status}
-          productTitle={productResult.product.title}
-        />
-      </GlassPanel>
+      <ProductLifecycleProvider initialStatus={productResult.product.status}>
+        <GlassPanel className="p-5">
+          <ProductMediaManager
+            initialError={mediaError}
+            initialMedia={initialMedia}
+            productId={productResult.product.id}
+            productStatus={productResult.product.status}
+            productTitle={productResult.product.title}
+          />
+        </GlassPanel>
+
+        <GlassPanel className="p-5">
+          <ProductStateControl
+            mediaCount={initialMedia.length}
+            mediaLoadError={Boolean(mediaError)}
+            productId={productResult.product.id}
+            productStatus={productResult.product.status}
+          />
+        </GlassPanel>
+      </ProductLifecycleProvider>
     </main>
   );
 }

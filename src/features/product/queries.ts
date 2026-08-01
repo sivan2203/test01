@@ -5,6 +5,7 @@ import {
   getProductPriceLabel,
   type ProductAvailabilityStatus,
   type ProductPriceMode,
+  type ProductStatus,
 } from "./schema";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -20,7 +21,7 @@ export function isProductId(value: string) {
   return PRODUCT_ID_PATTERN.test(value);
 }
 
-type ProductRow = {
+export type ProductRow = {
   id: string;
   store_id: string;
   title: string;
@@ -28,7 +29,7 @@ type ProductRow = {
   price_mode: ProductPriceMode;
   price_amount: number | null;
   availability_status: ProductAvailabilityStatus;
-  status: "draft" | "published" | "hidden" | "deleted";
+  status: ProductStatus;
   created_at: string;
   updated_at: string;
 };
@@ -42,7 +43,7 @@ export type SellerProduct = {
   priceAmount: number | null;
   priceLabel: string;
   availabilityStatus: ProductAvailabilityStatus;
-  status: "draft" | "published" | "hidden" | "deleted";
+  status: ProductStatus;
   createdAt: string;
   updatedAt: string;
 };
@@ -120,7 +121,7 @@ export async function getSellerProducts(): Promise<SellerProductsResult> {
         "id, store_id, title, description, price_mode, price_amount, availability_status, status, created_at, updated_at",
       )
       .eq("store_id", storeResult.storeId)
-      .eq("status", "draft")
+      .neq("status", "deleted")
       .order("updated_at", { ascending: false })
       .returns<ProductRow[]>();
 
@@ -134,7 +135,7 @@ export async function getSellerProducts(): Promise<SellerProductsResult> {
   }
 }
 
-export async function getSellerProductDraftById(
+export async function getSellerProductById(
   productId: string,
 ): Promise<SellerProductResult> {
   if (!isProductId(productId)) {
@@ -164,7 +165,7 @@ export async function getSellerProductDraftById(
       )
       .eq("id", productId)
       .eq("store_id", storeResult.storeId)
-      .eq("status", "draft")
+      .neq("status", "deleted")
       .maybeSingle<ProductRow>();
 
     if (error) {
@@ -179,4 +180,11 @@ export async function getSellerProductDraftById(
   } catch {
     return { status: "error" };
   }
+}
+
+/** @deprecated Use getSellerProductById for all editable non-deleted products. */
+export async function getSellerProductDraftById(
+  productId: string,
+): Promise<SellerProductResult> {
+  return getSellerProductById(productId);
 }

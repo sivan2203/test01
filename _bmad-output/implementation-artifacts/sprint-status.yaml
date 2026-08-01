@@ -58,7 +58,7 @@ development_status:
   epic-2: in-progress
   2-1-create-product-draft-manually: done
   2-2-manage-product-photos: done
-  2-3-edit-product-and-manage-publication-state: backlog
+  2-3-edit-product-and-manage-publication-state: done
   2-4-seller-product-list-and-status-filters: backlog
   epic-2-retrospective: optional
   epic-3: backlog

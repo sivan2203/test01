@@ -8,11 +8,13 @@ import {
   type ProductMedia,
 } from "./media-schema";
 import { manageProductMedia } from "./media-actions";
+import { useProductLifecycleStatus } from "./product-lifecycle-context";
+import type { ProductStatus } from "./schema";
 
 type ProductMediaManagerProps = {
   productId: string;
   productTitle: string;
-  productStatus: string;
+  productStatus: ProductStatus;
   initialMedia: ProductMedia[];
   initialError?: string;
 };
@@ -28,6 +30,7 @@ export function ProductMediaManager({
   initialMedia,
   initialError,
 }: ProductMediaManagerProps) {
+  const lifecycle = useProductLifecycleStatus(productStatus);
   const initialState = getInitialProductMediaActionState(initialMedia);
   const [state, mediaAction, pending] = useActionState(
     manageProductMedia.bind(null, productId),
@@ -164,7 +167,7 @@ export function ProductMediaManager({
         </ol>
       ) : (
         <p className="rounded-2xl border border-dashed border-border p-4 text-sm leading-6 text-foreground/70">
-          У черновика пока нет фотографий. Их можно добавить сейчас или позже; для публикации понадобится от 1 до 10 фото.
+          У товара пока нет фотографий. Их можно добавить сейчас или позже; для публикации понадобится от 1 до 10 фото.
         </p>
       )}
 
@@ -172,7 +175,7 @@ export function ProductMediaManager({
         {actionMessage || "Нет сообщений"}
       </p>
 
-      {productStatus === "published" ? (
+      {lifecycle.productStatus === "published" ? (
         <p className="text-xs leading-5 text-foreground/60">
           Опубликованный товар должен сохранять хотя бы одну фотографию.
         </p>

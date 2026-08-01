@@ -1,6 +1,18 @@
 export const PRODUCT_TITLE_MAX_LENGTH = 120;
 export const PRODUCT_DESCRIPTION_MAX_LENGTH = 1000;
 export const PRODUCT_STATUS_DRAFT = "draft";
+export const PRODUCT_STATUS_PUBLISHED = "published";
+export const PRODUCT_STATUS_HIDDEN = "hidden";
+export const PRODUCT_STATUS_DELETED = "deleted";
+
+export const PRODUCT_STATUSES = [
+  PRODUCT_STATUS_DRAFT,
+  PRODUCT_STATUS_PUBLISHED,
+  PRODUCT_STATUS_HIDDEN,
+  PRODUCT_STATUS_DELETED,
+] as const;
+
+export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
 
 export const PRODUCT_PRICE_MODES = ["fixed", "request"] as const;
 export const PRODUCT_AVAILABILITY_STATUSES = [
@@ -22,9 +34,11 @@ export type ProductDraftValues = {
 
 export type ProductDraftFieldErrors = Partial<
   Record<keyof ProductDraftValues, string>
->;
+> & {
+  media?: string;
+};
 
-type ProductDraftValidationResult = {
+export type ProductDraftValidationResult = {
   values: ProductDraftValues;
   fieldErrors: ProductDraftFieldErrors;
   isValid: boolean;
