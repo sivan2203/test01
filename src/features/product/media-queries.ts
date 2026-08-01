@@ -178,9 +178,19 @@ export async function getSellerProductCovers(
 
     if (error) return { status: "error" };
 
+    const mediaRows = rows ?? [];
+    const { data: signedUrls, error: signedUrlsError } = await supabase.storage
+      .from(PRODUCT_MEDIA_BUCKET)
+      .createSignedUrls(
+        mediaRows.map((row) => row.storage_path),
+        PRODUCT_MEDIA_SIGNED_URL_TTL_SECONDS,
+      );
+
+    if (signedUrlsError) return { status: "error" };
+
     const covers = new Map<string, string>();
-    for (const row of rows ?? []) {
-      const url = await createSignedProductMediaUrl(supabase, row.storage_path);
+    for (const [index, row] of mediaRows.entries()) {
+      const url = signedUrls?.[index]?.signedUrl;
       if (url) covers.set(row.product_id, url);
     }
 

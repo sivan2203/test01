@@ -4,7 +4,7 @@ baseline_commit: 6e54522b11a98559ce8ce5b2a0996b80cc33de4b
 
 # Story 2.4: Seller Product List and Status Filters
 
-Status: review
+Status: done
 
 ## Story
 
@@ -186,6 +186,8 @@ Codex GPT-5
 - Обновлена seller Products page: URL-фильтры, семантический active state, карточки с cover/title/price/availability/status, read-only archive и раздельные empty states.
 - Добавлены smoke checks для фильтров, source/build boundaries, private media и отсутствия service-role/client-controlled ownership paths.
 - Проверка `npm.cmd run check` прошла: lint (1 существующее предупреждение `no-img-element` в `product-media-manager.tsx`), typecheck, build и smoke.
+- Все 5 patch findings из code review исправлены; deferred findings сохранены в `deferred-work.md`.
+- Повторная проверка после review patches: `npm.cmd run check` проходит; остаётся только исходное предупреждение `no-img-element` в `product-media-manager.tsx`.
 
 ### File List
 
@@ -194,6 +196,7 @@ Codex GPT-5
 - `scripts/smoke-foundation.mjs`
 - `src/app/(seller)/seller/(admin)/products/page.tsx`
 - `src/features/product/media-queries.ts`
+- `src/features/product/product-cover.tsx`
 - `src/features/product/product-list.ts`
 - `src/features/product/queries.ts`
 
@@ -207,3 +210,14 @@ Codex GPT-5
 
 - 2026-08-01: Создан контекстный story-файл Story 2.4; sprint status переведён из `backlog` в `ready-for-dev`.
 - 2026-08-01: Реализованы server-side product status filters, private batch cover lookup, mobile seller list/archive UI и smoke guardrails; Story 2.4 переведена в `review`.
+- 2026-08-01: Исправлены 5 code-review findings: batch signed URLs, best-effort cover errors, broken-image fallback и расширенное smoke coverage; Story 2.4 переведена в `done`.
+
+### Review Findings
+
+- [x] [Review][Patch] Batch signed cover URLs instead of sequential Storage requests [src/features/product/media-queries.ts:181-184] — заменено на один `createSignedUrls` batch-запрос с сопоставлением результатов по media row.
+- [x] [Review][Patch] Cover lookup failure must not hide a valid product list [src/app/(seller)/seller/(admin)/products/page.tsx:131-147] — media errors теперь дают non-blocking notice и список без обложек; `unauthenticated` редиректит на sign-in, `store_not_found` имеет отдельное recovery state.
+- [x] [Review][Patch] Add browser-side fallback for broken or expired cover images [src/features/product/product-cover.tsx:1-35] — новый client component переключается на нейтральный placeholder через `onError`.
+- [x] [Review][Patch] Expand smoke coverage beyond source-string checks [scripts/smoke-foundation.mjs:127-142,481-505,772-798] — добавлена pure card-state mapping coverage, product-cover fallback guard и проверки archive/edit/status branches.
+- [x] [Review][Patch] Cover repeated-query parser input in smoke tests [scripts/smoke-foundation.mjs:127-138] — добавлены single-array и conflicting-array cases; конфликтующие повторные параметры безопасно сводятся к `all`.
+- [x] [Review][Defer] Add bounded pagination for the seller product list [src/features/product/queries.ts:121-135] — список был unbounded до Story 2.4; pagination/limit требует отдельного UX/API решения и не входит в текущий acceptance contract.
+- [x] [Review][Defer] Add runtime RLS integration tests for cross-seller product and media isolation [scripts/smoke-foundation.mjs:772-798] — текущий репозиторий не содержит runtime Supabase integration harness/fixtures; source smoke guards остаются проверкой границ до появления такого harness.

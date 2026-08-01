@@ -19,6 +19,7 @@ import {
   validateProductPublication,
 } from "../src/features/product/lifecycle.ts";
 import {
+  getSellerProductCardState,
   matchesSellerProductListFilter,
   parseSellerProductListFilter,
 } from "../src/features/product/product-list.ts";
@@ -55,6 +56,7 @@ const requiredPaths = [
   "src/features/product/queries.ts",
   "src/features/product/schema.ts",
   "src/features/product/product-list.ts",
+  "src/features/product/product-cover.tsx",
   "src/features/store/actions.ts",
   "src/features/store/avatar.ts",
   "src/features/store/form-state.ts",
@@ -132,10 +134,17 @@ if (
   parseSellerProductListFilter("published") !== "published" ||
   parseSellerProductListFilter("hidden") !== "hidden" ||
   parseSellerProductListFilter("deleted") !== "deleted" ||
+  parseSellerProductListFilter(["draft"]) !== "draft" ||
+  parseSellerProductListFilter(["draft", "published"]) !== "all" ||
   !matchesSellerProductListFilter("draft", "all") ||
   !matchesSellerProductListFilter("deleted", "deleted") ||
   matchesSellerProductListFilter("deleted", "all") ||
-  matchesSellerProductListFilter("published", "draft")
+  matchesSellerProductListFilter("published", "draft") ||
+  !getSellerProductCardState("published", "signed-url").hasCover ||
+  !getSellerProductCardState("published", "signed-url").canEdit ||
+  getSellerProductCardState("published", null).hasCover ||
+  getSellerProductCardState("deleted", "signed-url").canEdit ||
+  !getSellerProductCardState("deleted", "signed-url").isArchived
 ) {
   console.error("Foundation smoke check failed. Seller product list filter contract is incomplete.");
   process.exit(1);
@@ -478,6 +487,10 @@ const sellerProductEditSource = readFileSync(
   join(root, "src/app/(seller)/seller/(admin)/products/[productId]/edit/page.tsx"),
   "utf8",
 );
+const productCoverSource = readFileSync(
+  join(root, "src/features/product/product-cover.tsx"),
+  "utf8",
+);
 if (
   !sellerProductsSource.includes("getSellerProducts") ||
   !sellerProductsSource.includes("getSellerProductCovers") ||
@@ -486,6 +499,7 @@ if (
   !sellerProductsSource.includes('aria-current={isActive ? "page" : undefined}') ||
   !sellerProductsSource.includes('`/seller/products?status=${filter}`') ||
   !sellerProductsSource.includes("PRODUCT_STATUS_DELETED") ||
+  !sellerProductsSource.includes("ProductCover") ||
   !sellerProductsSource.includes("Архивный товар · редактор недоступен") ||
   !sellerProductsSource.includes('href="/seller/products/new"') ||
   !sellerProductsSource.includes('href={`/seller/products/${product.id}/edit`}') ||
@@ -505,6 +519,14 @@ if (
   sellerProductEditSource.includes("service-role")
 ) {
   console.error("Foundation smoke check failed. Product draft routes are incomplete.");
+  process.exit(1);
+}
+if (
+  !productCoverSource.includes("onError") ||
+  !productCoverSource.includes("hasError") ||
+  !productCoverSource.includes("Нет фото")
+) {
+  console.error("Foundation smoke check failed. Product cover fallback is incomplete.");
   process.exit(1);
 }
 

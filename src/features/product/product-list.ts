@@ -19,6 +19,8 @@ export type SellerProductListFilter =
 export function parseSellerProductListFilter(
   value: string | string[] | null | undefined,
 ): SellerProductListFilter {
+  if (Array.isArray(value) && value.length !== 1) return "all";
+
   const candidate = Array.isArray(value) ? value[0] : value;
 
   return SELLER_PRODUCT_LIST_FILTERS.includes(
@@ -34,4 +36,15 @@ export function matchesSellerProductListFilter(
 ) {
   if (filter === "all") return status !== PRODUCT_STATUS_DELETED;
   return status === filter;
+}
+
+export function getSellerProductCardState(
+  status: ProductStatus,
+  coverUrl: string | null,
+) {
+  return {
+    isArchived: status === PRODUCT_STATUS_DELETED,
+    hasCover: Boolean(coverUrl),
+    canEdit: status !== PRODUCT_STATUS_DELETED,
+  };
 }

@@ -1,11 +1,10 @@
-/* eslint-disable @next/next/no-img-element */
-
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GlassPanel } from "@/components/design-system";
 import { buttonVariants } from "@/components/ui/button";
 import { getSellerProductCovers } from "@/features/product/media-queries";
+import { ProductCover } from "@/features/product/product-cover";
 import {
   getProductStatusLabel,
   PRODUCT_STATUS_DELETED,
@@ -17,6 +16,7 @@ import {
 import {
   parseSellerProductListFilter,
   SELLER_PRODUCT_LIST_FILTERS,
+  getSellerProductCardState,
   type SellerProductListFilter,
 } from "@/features/product/product-list";
 import { cn } from "@/lib/utils";
@@ -51,21 +51,7 @@ function productCardContent(product: {
 }) {
   return (
     <>
-      {product.coverUrl ? (
-        <img
-          alt={`Обложка товара: ${product.title}`}
-          className="h-20 w-20 shrink-0 rounded-xl object-cover"
-          src={product.coverUrl}
-        />
-      ) : (
-        <div
-          aria-label={`У товара ${product.title} пока нет обложки`}
-          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-surface-raised px-2 text-center text-xs leading-4 text-foreground/55"
-          role="img"
-        >
-          Нет фото
-        </div>
-      )}
+      <ProductCover src={product.coverUrl} title={product.title} />
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
           <p className="break-words text-base font-semibold">{product.title}</p>
@@ -132,23 +118,33 @@ export default async function SellerProductsPage({
     productsResult.products.map((product) => product.id),
   );
 
-  if (coversResult.status !== "found") {
+  if (coversResult.status === "unauthenticated") {
+    redirect("/seller/sign-in?from=/seller/products");
+  }
+
+  if (coversResult.status === "store_not_found") {
     return (
-      <main>
-        <GlassPanel className="p-5" role="alert">
+      <main className="flex flex-col gap-4">
+        <GlassPanel className="p-5">
           <p className="text-sm text-foreground/60">Товары</p>
-          <h1 className="mt-2 text-2xl font-semibold">Не удалось загрузить обложки товаров</h1>
+          <h1 className="mt-2 text-2xl font-semibold">Сначала создайте витрину</h1>
           <p className="mt-3 text-sm leading-6 text-foreground/70">
-            Обновите страницу и попробуйте ещё раз. Список не показывается без проверки доступа к фотографиям.
+            Витрина больше не найдена. Проверьте профиль магазина и вернитесь к товарам.
           </p>
+          <Link className={cn(buttonVariants(), "mt-5 w-full")} href="/seller/store">
+            Открыть настройки витрины
+          </Link>
         </GlassPanel>
       </main>
     );
   }
 
+  const covers = coversResult.status === "found" ? coversResult.covers : new Map<string, string>();
+  const coversLoadError = coversResult.status === "error";
+
   const products = productsResult.products.map((product) => ({
     ...product,
-    coverUrl: coversResult.covers.get(product.id) ?? null,
+    coverUrl: covers.get(product.id) ?? null,
   }));
   const hasProducts = products.length > 0;
 
@@ -171,6 +167,12 @@ export default async function SellerProductsPage({
           Находите товары по статусу, открывайте редактор и продолжайте работу с телефона.
         </p>
       </GlassPanel>
+
+      {coversLoadError ? (
+        <p className="rounded-2xl border border-dashed border-border p-4 text-sm leading-6 text-foreground/70" role="status">
+          Обложки временно недоступны. Список товаров можно открыть и отредактировать без фотографий.
+        </p>
+      ) : null}
 
       <nav aria-label="Фильтр товаров" className="flex flex-wrap gap-2">
         {SELLER_PRODUCT_LIST_FILTERS.map((filter) => {
@@ -199,8 +201,9 @@ export default async function SellerProductsPage({
         <section className="flex flex-col gap-3" aria-label="Список товаров">
           {products.map((product) => {
             const content = productCardContent(product);
+            const cardState = getSellerProductCardState(product.status, product.coverUrl);
 
-            return product.status === PRODUCT_STATUS_DELETED ? (
+            return cardState.isArchived ? (
               <article
                 className="flex items-start gap-3 rounded-2xl border border-border bg-glass p-4 text-foreground shadow-sm backdrop-blur-xl"
                 key={product.id}
