@@ -1,19 +1,30 @@
 import { GlassPanel } from "@/components/design-system";
-import { Button } from "@/components/ui/button";
+import { getSellerAuthRedirect } from "@/features/seller-auth/redirect";
+import { SellerSignInForm } from "@/features/seller-auth/sign-in-form";
 
-export default function SellerSignInPlaceholderPage() {
+export default async function SellerSignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; error?: string }>;
+}) {
+  const params = await searchParams;
+  const from = getSellerAuthRedirect(params.from);
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-6">
       <GlassPanel className="p-5">
-        <p className="text-sm text-foreground/60">Seller auth placeholder</p>
-        <h1 className="mt-2 text-2xl font-semibold">Вход продавца</h1>
+        <p className="text-sm text-foreground/60">Кабинет продавца</p>
+        <h1 className="mt-2 text-2xl font-semibold">Войти или зарегистрироваться</h1>
         <p className="mt-3 text-sm leading-6 text-foreground/70">
-          Story 1.0 only verifies route separation. Real seller sign-in is
-          implemented in Story 1.1.
+          Укажите email — отправим одноразовую ссылку для входа. Покупателям
+          аккаунт не нужен.
         </p>
-        <Button className="mt-5 w-full" disabled aria-disabled>
-          Скоро
-        </Button>
+        {params.error ? (
+          <p className="mt-3 text-sm leading-6 text-foreground/75" role="alert">
+            Не удалось завершить вход. Запросите новую ссылку и попробуйте ещё раз.
+          </p>
+        ) : null}
+        <SellerSignInForm from={from} />
       </GlassPanel>
     </main>
   );

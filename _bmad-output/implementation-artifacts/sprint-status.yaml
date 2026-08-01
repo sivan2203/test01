@@ -50,7 +50,7 @@ story_location: C:\Work\projects\test01\_bmad-output\implementation-artifacts
 development_status:
   epic-1: in-progress
   1-0-initialize-greenfield-web-app-foundation: done
-  1-1-seller-sign-in-and-mobile-admin-shell: backlog
+  1-1-seller-sign-in-and-mobile-admin-shell: done
   1-2-create-and-edit-store-profile: backlog
   1-3-configure-public-store-slug: backlog
   1-4-preview-store-as-buyer: backlog

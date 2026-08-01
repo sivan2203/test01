@@ -1,24 +1,32 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { createSupabaseProxyClient } from "./lib/supabase/proxy";
 import {
   getSellerReturnPath,
-  isDevSellerSessionCookie,
   SELLER_SIGN_IN_PATH,
 } from "./proxy-rules.mjs";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!pathname.startsWith("/seller") || pathname === SELLER_SIGN_IN_PATH) {
     return NextResponse.next();
   }
 
-  const hasDevSellerSession = isDevSellerSessionCookie(
-    request.cookies.get("seller_session")?.value,
-  );
+  let authResponse: NextResponse | null = null;
 
-  if (hasDevSellerSession) {
-    return NextResponse.next();
+  try {
+    const auth = createSupabaseProxyClient(request);
+    const {
+      data: { user },
+    } = await auth.supabase.auth.getUser();
+    authResponse = auth.response;
+
+    if (user) {
+      return auth.response;
+    }
+  } catch {
+    // If auth is unavailable because local env is missing, fail closed into sign-in.
   }
 
   const signInUrl = request.nextUrl.clone();
@@ -28,7 +36,12 @@ export function proxy(request: NextRequest) {
     getSellerReturnPath(pathname, request.nextUrl.search),
   );
 
-  return NextResponse.redirect(signInUrl);
+  const redirectResponse = NextResponse.redirect(signInUrl);
+  authResponse?.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie);
+  });
+
+  return redirectResponse;
 }
 
 export const config = {
