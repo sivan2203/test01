@@ -53,10 +53,10 @@ development_status:
   1-1-seller-sign-in-and-mobile-admin-shell: done
   1-2-create-and-edit-store-profile: done
   1-3-configure-public-store-slug: done
-  1-4-preview-store-as-buyer: ready-for-dev
+  1-4-preview-store-as-buyer: done
   epic-1-retrospective: optional
-  epic-2: backlog
-  2-1-create-product-draft-manually: backlog
+  epic-2: in-progress
+  2-1-create-product-draft-manually: done
   2-2-manage-product-photos: backlog
   2-3-edit-product-and-manage-publication-state: backlog
   2-4-seller-product-list-and-status-filters: backlog

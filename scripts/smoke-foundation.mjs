@@ -13,8 +13,11 @@ const requiredPaths = [
   "src/app/(seller)/seller/(admin)/layout.tsx",
   "src/app/(seller)/seller/(admin)/page.tsx",
   "src/app/(seller)/seller/(admin)/products/page.tsx",
+  "src/app/(seller)/seller/(admin)/products/new/page.tsx",
+  "src/app/(seller)/seller/(admin)/products/[productId]/edit/page.tsx",
   "src/app/(seller)/seller/(admin)/analytics/page.tsx",
   "src/app/(seller)/seller/(admin)/store/page.tsx",
+  "src/app/(seller)/seller/(admin)/store/preview/page.tsx",
   "src/app/(seller)/seller/sign-in/page.tsx",
   "src/app/auth/callback/route.ts",
   "src/components/ui/button.tsx",
@@ -22,9 +25,16 @@ const requiredPaths = [
   "src/features/seller-auth/actions.ts",
   "src/features/seller-auth/redirect.ts",
   "src/features/seller-auth/sign-in-form.tsx",
+  "src/features/product/actions.ts",
+  "src/features/product/form-state.ts",
+  "src/features/product/product-form.tsx",
+  "src/features/product/queries.ts",
+  "src/features/product/schema.ts",
   "src/features/store/actions.ts",
   "src/features/store/avatar.ts",
   "src/features/store/form-state.ts",
+  "src/features/store/public-catalog.ts",
+  "src/features/store/public-storefront-shell.tsx",
   "src/features/store/public-queries.ts",
   "src/features/store/queries.ts",
   "src/features/store/schema.ts",
@@ -77,7 +87,11 @@ if (
   !routeManifest["/page"] ||
   !routeManifest["/(public)/[storeSlug]/page"] ||
   !routeManifest["/(seller)/seller/(admin)/page"] ||
+  !routeManifest["/(seller)/seller/(admin)/products/page"] ||
+  !routeManifest["/(seller)/seller/(admin)/products/new/page"] ||
+  !routeManifest["/(seller)/seller/(admin)/products/[productId]/edit/page"] ||
   !routeManifest["/(seller)/seller/(admin)/store/page"] ||
+  !routeManifest["/(seller)/seller/(admin)/store/preview/page"] ||
   !routeManifest["/(seller)/seller/sign-in/page"] ||
   !routeManifest["/auth/callback/route"]
 ) {
@@ -247,6 +261,45 @@ if (
   process.exit(1);
 }
 
+const productMigrationName = readdirSync(migrationDir).find((fileName) =>
+  fileName.endsWith("_create_products.sql"),
+);
+if (!productMigrationName) {
+  console.error("Foundation smoke check failed. Product migration is missing.");
+  process.exit(1);
+}
+
+const productMigration = readFileSync(
+  join(migrationDir, productMigrationName),
+  "utf8",
+);
+const requiredProductMigrationSnippets = [
+  "create table if not exists public.products",
+  "store_id uuid not null references public.stores(id) on delete cascade",
+  "status text not null default 'draft'",
+  "products_status_check",
+  "'draft', 'published', 'hidden', 'deleted'",
+  "products_price_mode_check",
+  "'fixed', 'request'",
+  "products_price_amount_check",
+  "alter table public.products enable row level security",
+  "products_select_own",
+  "products_insert_own",
+  "products_update_own",
+  "(select auth.uid())",
+  "get_public_catalog_items_for_store",
+  "and products.status = 'published'",
+  "grant execute on function public.get_public_catalog_items_for_store(text) to anon, authenticated",
+];
+if (
+  requiredProductMigrationSnippets.some(
+    (snippet) => !productMigration.includes(snippet),
+  )
+) {
+  console.error("Foundation smoke check failed. Product migration/RLS/public visibility boundaries are incomplete.");
+  process.exit(1);
+}
+
 const storeFeatureFiles = [
   "src/features/store/actions.ts",
   "src/features/store/avatar.ts",
@@ -330,6 +383,73 @@ if (
   process.exit(1);
 }
 
+const productFeatureFiles = [
+  "src/features/product/actions.ts",
+  "src/features/product/form-state.ts",
+  "src/features/product/product-form.tsx",
+  "src/features/product/queries.ts",
+  "src/features/product/schema.ts",
+];
+const productFeatureSource = productFeatureFiles
+  .map((filePath) => readFileSync(join(root, filePath), "utf8"))
+  .join("\n");
+if (
+  productFeatureSource.includes("createSupabaseServiceRoleClient") ||
+  productFeatureSource.includes("service-role") ||
+  productFeatureSource.includes('formData.get("seller_id")') ||
+  productFeatureSource.includes('formData.get("store_id")') ||
+  productFeatureSource.includes('formData.get("productId")') ||
+  !productFeatureSource.includes("PRODUCT_TITLE_MAX_LENGTH = 120") ||
+  !productFeatureSource.includes("PRODUCT_DESCRIPTION_MAX_LENGTH = 1000") ||
+  !productFeatureSource.includes('PRODUCT_STATUS_DRAFT = "draft"') ||
+  !productFeatureSource.includes('priceMode: "request"') ||
+  !productFeatureSource.includes("createSupabaseServerClient") ||
+  !productFeatureSource.includes("getCurrentSellerStoreForProducts") ||
+  !productFeatureSource.includes("createProductDraft") ||
+  !productFeatureSource.includes("updateProductDraft") ||
+  !productFeatureSource.includes("useActionState") ||
+  !productFeatureSource.includes('name="title"') ||
+  !productFeatureSource.includes('name="priceMode"') ||
+  !productFeatureSource.includes('name="availabilityStatus"')
+) {
+  console.error("Foundation smoke check failed. Product draft feature boundaries are incomplete.");
+  process.exit(1);
+}
+
+const sellerProductsSource = readFileSync(
+  join(root, "src/app/(seller)/seller/(admin)/products/page.tsx"),
+  "utf8",
+);
+const sellerProductNewSource = readFileSync(
+  join(root, "src/app/(seller)/seller/(admin)/products/new/page.tsx"),
+  "utf8",
+);
+const sellerProductEditSource = readFileSync(
+  join(root, "src/app/(seller)/seller/(admin)/products/[productId]/edit/page.tsx"),
+  "utf8",
+);
+if (
+  !sellerProductsSource.includes("getSellerProducts") ||
+  !sellerProductsSource.includes('href="/seller/products/new"') ||
+  !sellerProductsSource.includes('href={`/seller/products/${product.id}/edit`}') ||
+  !sellerProductNewSource.includes("getCurrentSellerStoreProfile") ||
+  !sellerProductNewSource.includes("getInitialProductDraftFormState(null)") ||
+  !sellerProductNewSource.includes("ProductForm") ||
+  !sellerProductEditSource.includes("getSellerProductDraftById") ||
+  !sellerProductEditSource.includes("getInitialProductDraftFormState(productResult.product)") ||
+  !sellerProductEditSource.includes("ProductForm") ||
+  !sellerProductEditSource.includes("productId={productResult.product.id}") ||
+  sellerProductsSource.includes("createSupabaseServiceRoleClient") ||
+  sellerProductsSource.includes("service-role") ||
+  sellerProductNewSource.includes("createSupabaseServiceRoleClient") ||
+  sellerProductNewSource.includes("service-role") ||
+  sellerProductEditSource.includes("createSupabaseServiceRoleClient") ||
+  sellerProductEditSource.includes("service-role")
+) {
+  console.error("Foundation smoke check failed. Product draft routes are incomplete.");
+  process.exit(1);
+}
+
 const sellerHomeSource = readFileSync(
   join(root, "src/app/(seller)/seller/(admin)/page.tsx"),
   "utf8",
@@ -355,18 +475,37 @@ const publicStorePageSource = readFileSync(
   join(root, "src/app/(public)/[storeSlug]/page.tsx"),
   "utf8",
 );
+const previewStorePageSource = readFileSync(
+  join(root, "src/app/(seller)/seller/(admin)/store/preview/page.tsx"),
+  "utf8",
+);
+const publicStorefrontShellSource = readFileSync(
+  join(root, "src/features/store/public-storefront-shell.tsx"),
+  "utf8",
+);
+const publicCatalogSource = readFileSync(
+  join(root, "src/features/store/public-catalog.ts"),
+  "utf8",
+);
 const publicStoreQuerySource = readFileSync(
   join(root, "src/features/store/public-queries.ts"),
   "utf8",
 );
 if (
   !publicStorePageSource.includes("getPublicStoreBySlug") ||
+  !publicStorePageSource.includes("getPublishedPublicCatalogItemsForStore") ||
+  !publicStorePageSource.includes("PublicStorefrontShell") ||
   !publicStorePageSource.includes("notFound()") ||
   !publicStorePageSource.includes('storeResult.status === "error"') ||
   !publicStorePageSource.includes('throw new Error("Public store lookup failed.")') ||
   !publicStorePageSource.includes('dynamic = "force-dynamic"') ||
+  publicStorePageSource.includes("Режим предпросмотра") ||
+  publicStorePageSource.includes("@/features/store/queries") ||
+  publicStorePageSource.includes("(seller)") ||
   publicStorePageSource.includes("Public storefront route") ||
   publicStorePageSource.includes("variant=\"telegram\"") ||
+  publicStorePageSource.includes("createSupabaseServiceRoleClient") ||
+  publicStorePageSource.includes("service-role") ||
   !publicStoreQuerySource.includes("get_public_store_by_slug") ||
   !publicStoreQuerySource.includes('status: "found"') ||
   !publicStoreQuerySource.includes('status: "not_found"') ||
@@ -379,6 +518,70 @@ if (
   publicStoreQuerySource.includes("id:")
 ) {
   console.error("Foundation smoke check failed. Public store slug route can render invalid or old slugs.");
+  process.exit(1);
+}
+
+if (
+  !previewStorePageSource.includes("getCurrentSellerStoreProfile") ||
+  !previewStorePageSource.includes("getPublishedPublicCatalogItemsForStore") ||
+  !previewStorePageSource.includes("buyerFacingStore") ||
+  previewStorePageSource.includes("avatarUrl") ||
+  !previewStorePageSource.includes("PublicStorefrontShell") ||
+  !previewStorePageSource.includes('href="/seller/store"') ||
+  !previewStorePageSource.includes("Режим предпросмотра") ||
+  previewStorePageSource.includes("seller_id") ||
+  previewStorePageSource.includes("store_id") ||
+  previewStorePageSource.includes("createSupabaseServiceRoleClient") ||
+  previewStorePageSource.includes("service-role")
+) {
+  console.error("Foundation smoke check failed. Seller preview route guardrails are incomplete.");
+  process.exit(1);
+}
+
+if (
+  !publicStorefrontShellSource.includes("previewIndicator") ||
+  !publicStorefrontShellSource.includes("catalogItems") ||
+  publicStorefrontShellSource.includes("avatarUrl") ||
+  !publicCatalogSource.includes('import "server-only"') ||
+  !publicCatalogSource.includes("getPublishedPublicCatalogItemsForStore") ||
+  !publicCatalogSource.includes("get_public_catalog_items_for_store") ||
+  !publicCatalogSource.includes('status: "published"') ||
+  !publicCatalogSource.includes("PublicCatalogResult") ||
+  !publicCatalogSource.includes("status: \"published\"") ||
+  publicCatalogSource.includes("createSupabaseServiceRoleClient") ||
+  publicCatalogSource.includes("service-role") ||
+  publicStorefrontShellSource.includes("status: \"draft\"") ||
+  publicStorefrontShellSource.includes("status: \"hidden\"") ||
+  publicCatalogSource.includes("status: \"draft\"") ||
+  publicCatalogSource.includes("status: \"hidden\"") ||
+  publicStorefrontShellSource.includes("recordAnalytics") ||
+  publicStorefrontShellSource.includes("analytics.track") ||
+  publicStorefrontShellSource.includes("navigator.sendBeacon") ||
+  publicStorefrontShellSource.includes("fetch(\"/api/analytics") ||
+  publicStorefrontShellSource.includes("catalogItems.map") ||
+  publicStorefrontShellSource.includes("<article")
+) {
+  console.error("Foundation smoke check failed. Preview/public storefront shell boundaries are incomplete.");
+  process.exit(1);
+}
+
+const productMigrationSource = readFileSync(
+  join(root, "supabase/migrations/20260801183000_create_products.sql"),
+  "utf8",
+);
+if (
+  !productMigrationSource.includes("products_title_length_check") ||
+  !productMigrationSource.includes("products_description_length_check") ||
+  !productMigrationSource.includes("products_price_mode_check") ||
+  !productMigrationSource.includes("products_price_amount_check") ||
+  !productMigrationSource.includes("products_availability_status_check") ||
+  !productMigrationSource.includes("products_status_check") ||
+  !productMigrationSource.includes("products_store_id_idx") ||
+  !productMigrationSource.includes("products_store_status_idx") ||
+  !productMigrationSource.includes("products.status = 'draft'") ||
+  !productMigrationSource.includes("products.status = 'published'")
+) {
+  console.error("Foundation smoke check failed. Product migration boundaries are incomplete.");
   process.exit(1);
 }
 

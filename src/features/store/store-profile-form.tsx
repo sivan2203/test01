@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { saveStoreProfile } from "./actions";
 import type { StoreProfileFormState } from "./form-state";
 
@@ -183,6 +185,23 @@ export function StoreProfileForm({ initialState }: StoreProfileFormProps) {
               >
                 Поделиться
               </Button>
+            </div>
+            <div className="mt-2">
+              {canUsePublicLink ? (
+                <Link
+                  className={cn(buttonVariants({ variant: "secondary" }), "w-full")}
+                  href="/seller/store/preview"
+                >
+                  Посмотреть как покупатель
+                </Link>
+              ) : (
+                <div
+                  aria-disabled="true"
+                  className="flex min-h-11 w-full items-center justify-center rounded-full border border-border bg-surface-raised px-5 text-center text-sm font-medium text-foreground/50"
+                >
+                  Сохраните публичную ссылку, чтобы открыть предпросмотр
+                </div>
+              )}
             </div>
             <p className="mt-2 text-sm leading-6 text-foreground/60" role="status">
               {currentLinkStatus ||

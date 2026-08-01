@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 
-import { GlassPanel } from "@/components/design-system";
+import { getPublishedPublicCatalogItemsForStore } from "@/features/store/public-catalog";
 import { getPublicStoreBySlug } from "@/features/store/public-queries";
+import { PublicStorefrontShell } from "@/features/store/public-storefront-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -22,27 +23,7 @@ export default async function PublicStorePage({
   }
 
   const { store } = storeResult;
+  const catalogItems = await getPublishedPublicCatalogItemsForStore(store.slug);
 
-  return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 py-6">
-      <GlassPanel className="p-5">
-        <p className="text-sm text-foreground/60">Витрина / {store.slug}</p>
-        <h1 className="mt-2 text-2xl font-semibold">{store.name}</h1>
-        {store.description ? (
-          <p className="mt-3 text-sm leading-6 text-foreground/70">
-            {store.description}
-          </p>
-        ) : null}
-        {store.additionalInfo ? (
-          <p className="mt-3 text-sm leading-6 text-foreground/60">
-            {store.additionalInfo}
-          </p>
-        ) : null}
-        <p className="mt-5 rounded-2xl border border-border bg-surface-raised p-4 text-sm leading-6 text-foreground/70">
-          Каталог появится здесь в следующих шагах. Сейчас проверяется только
-          текущая публичная ссылка магазина.
-        </p>
-      </GlassPanel>
-    </main>
-  );
+  return <PublicStorefrontShell catalogItems={catalogItems} store={store} />;
 }

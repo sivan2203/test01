@@ -4,7 +4,7 @@ baseline_commit: pending-uncommitted-story-1-3
 
 # Story 1.4: Preview Store as Buyer
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -42,43 +42,49 @@ so that I can check my public presentation before sharing the link.
 
 ## Tasks / Subtasks
 
-- [ ] Add a seller-only preview entry point from store settings (AC: 1, 3, 5)
-  - [ ] Add a clear `Посмотреть как покупатель` action to `/seller/store` when the authenticated seller has a store.
-  - [ ] If the store has no saved slug yet, show a text-first disabled/empty state explaining that the public link must be configured before preview can open.
-  - [ ] Link to a seller-authenticated preview route; do not open the public URL directly as the preview surface.
-  - [ ] Keep the control at least 44x44 CSS px and usable on 360-430px mobile width.
+- [x] Add a seller-only preview entry point from store settings (AC: 1, 3, 5)
+  - [x] Add a clear `Посмотреть как покупатель` action to `/seller/store` when the authenticated seller has a store.
+  - [x] If the store has no saved slug yet, show a text-first disabled/empty state explaining that the public link must be configured before preview can open.
+  - [x] Link to a seller-authenticated preview route; do not open the public URL directly as the preview surface.
+  - [x] Keep the control at least 44x44 CSS px and usable on 360-430px mobile width.
 
-- [ ] Create a protected seller preview route that reuses public storefront rendering structure (AC: 1, 3, 5)
-  - [ ] Add a route under the seller/admin surface, for example `src/app/(seller)/seller/(admin)/store/preview/page.tsx`.
-  - [ ] Load the current authenticated seller's store through seller-scoped queries; never accept `seller_id` or store id from query params.
-  - [ ] Reuse the same presentational storefront shell/components as `src/app/(public)/[storeSlug]/page.tsx` where possible, factoring shared UI into `src/features/store/public-storefront-shell.tsx` or similar.
-  - [ ] Add a seller-only preview indicator/badge that is rendered only by the preview route, not by the public route.
-  - [ ] Add an obvious return action back to `/seller/store`; do not rely on browser back only.
+- [x] Create a protected seller preview route that reuses public storefront rendering structure (AC: 1, 3, 5)
+  - [x] Add a route under the seller/admin surface, for example `src/app/(seller)/seller/(admin)/store/preview/page.tsx`.
+  - [x] Load the current authenticated seller's store through seller-scoped queries; never accept `seller_id` or store id from query params.
+  - [x] Reuse the same presentational storefront shell/components as `src/app/(public)/[storeSlug]/page.tsx` where possible, factoring shared UI into `src/features/store/public-storefront-shell.tsx` or similar.
+  - [x] Add a seller-only preview indicator/badge that is rendered only by the preview route, not by the public route.
+  - [x] Add an obvious return action back to `/seller/store`; do not rely on browser back only.
 
-- [ ] Preserve public route behavior while introducing preview context (AC: 1, 3)
-  - [ ] Keep `src/app/(public)/[storeSlug]/page.tsx` public and unauthenticated.
-  - [ ] Keep missing, invalid, old, or non-canonical slugs returning `notFound()`; do not relax Story 1.3 route identity rules.
-  - [ ] Public storefront must not import seller-admin route components or seller-only services.
-  - [ ] Preview may render owner-visible chrome, but that chrome must be supplied by preview context rather than leaking into public rendering.
+- [x] Preserve public route behavior while introducing preview context (AC: 1, 3)
+  - [x] Keep `src/app/(public)/[storeSlug]/page.tsx` public and unauthenticated.
+  - [x] Keep missing, invalid, old, or non-canonical slugs returning `notFound()`; do not relax Story 1.3 route identity rules.
+  - [x] Public storefront must not import seller-admin route components or seller-only services.
+  - [x] Preview may render owner-visible chrome, but that chrome must be supplied by preview context rather than leaking into public rendering.
 
-- [ ] Keep unpublished product visibility out of normal buyer preview (AC: 2)
-  - [ ] Because product persistence is not implemented yet, add explicit query/service seams and smoke checks so future product stories cannot render Draft/Hidden products in normal preview by client-side filtering.
-  - [ ] If a product list placeholder is shown, it must represent the public buyer state only: no draft/hidden examples in normal preview.
-  - [ ] Do not implement draft-only preview context unless a precise, seller-only context flag and data boundary are added; otherwise leave it out.
-  - [ ] Do not add product tables, product media, product detail routes, publication workflow, or product analytics in this story.
+- [x] Keep unpublished product visibility out of normal buyer preview (AC: 2)
+  - [x] Because product persistence is not implemented yet, add explicit query/service seams and smoke checks so future product stories cannot render Draft/Hidden products in normal preview by client-side filtering.
+  - [x] If a product list placeholder is shown, it must represent the public buyer state only: no draft/hidden examples in normal preview.
+  - [x] Do not implement draft-only preview context unless a precise, seller-only context flag and data boundary are added; otherwise leave it out.
+  - [x] Do not add product tables, product media, product detail routes, publication workflow, or product analytics in this story.
 
-- [ ] Ensure preview does not create analytics side effects (AC: 4)
-  - [ ] Do not call analytics ingestion from preview route or preview CTA placeholders.
-  - [ ] If analytics hooks/components are introduced as seams, require an explicit `context: "public" | "preview"` or equivalent and make preview excluded by default.
-  - [ ] Keep `src/features/analytics` and `src/app/api/analytics/route.ts` out of scope unless only adding static guardrails/no-op seams is necessary.
+- [x] Ensure preview does not create analytics side effects (AC: 4)
+  - [x] Do not call analytics ingestion from preview route or preview CTA placeholders.
+  - [x] If analytics hooks/components are introduced as seams, require an explicit `context: "public" | "preview"` or equivalent and make preview excluded by default.
+  - [x] Keep `src/features/analytics` and `src/app/api/analytics/route.ts` out of scope unless only adding static guardrails/no-op seams is necessary.
 
-- [ ] Extend verification for preview guardrails (AC: 1, 2, 3, 4, 5)
-  - [ ] Extend `scripts/smoke-foundation.mjs` to verify the preview route builds and remains behind `/seller`.
-  - [ ] Add static checks that public route does not render preview indicator text and does not import seller/admin modules.
-  - [ ] Add static checks that preview route renders a seller-only indicator and a return link to `/seller/store`.
-  - [ ] Add static checks that preview/public storefront shell does not contain draft/hidden product placeholders or analytics event calls.
-  - [ ] Run `npm.cmd run check`; it must pass lint, Next typegen + typecheck, production build, and smoke.
-  - [ ] Update README only if new local setup instructions are introduced; otherwise leave it unchanged.
+- [x] Extend verification for preview guardrails (AC: 1, 2, 3, 4, 5)
+  - [x] Extend `scripts/smoke-foundation.mjs` to verify the preview route builds and remains behind `/seller`.
+  - [x] Add static checks that public route does not render preview indicator text and does not import seller/admin modules.
+  - [x] Add static checks that preview route renders a seller-only indicator and a return link to `/seller/store`.
+  - [x] Add static checks that preview/public storefront shell does not contain draft/hidden product placeholders or analytics event calls.
+  - [x] Run `npm.cmd run check`; it must pass lint, Next typegen + typecheck, production build, and smoke.
+  - [x] Update README only if new local setup instructions are introduced; otherwise leave it unchanged.
+
+### Review Findings
+
+- [x] [Review][Patch] Preview can render seller-only avatar that public buyers cannot see [src/app/(seller)/seller/(admin)/store/preview/page.tsx:73]
+- [x] [Review][Patch] Published-only catalog visibility seam is only a UI type, not a query/service boundary [src/features/store/public-storefront-shell.tsx:13]
+- [x] [Review][Patch] Story file was rewritten with UTF-8 BOM / mojibake noise [_bmad-output/implementation-artifacts/1-4-preview-store-as-buyer.md:1]
 
 ## Dev Notes
 
@@ -220,6 +226,8 @@ Codex GPT-5
 - Add protected seller preview route that loads the current seller store and passes preview context to the shell.
 - Add preview entry point from store settings with disabled/missing-slug state.
 - Extend smoke checks to guard route protection, preview badge isolation, no analytics side effects, no draft/hidden placeholders, and no service-role imports.
+- RED/GREEN/REFACTOR executed with smoke guardrails first: preview files/shell checks failed before implementation, then passed after route/shell/form changes.
+- Code review patch pass completed: preview now uses buyer-safe store projection, catalog visibility has a server-only public seam, and the story file was normalized without BOM.
 
 ### Debug Log References
 
@@ -227,17 +235,37 @@ Codex GPT-5
 - Story 1.3 file and current Story 1.3 working-tree implementation reviewed for slug/public-route guardrails.
 - Relevant epics, PRD, architecture, and UX excerpts reviewed for FR4, AD-2, AD-5, AD-7, AD-20, and preview flow.
 - Official Next.js `notFound`/`redirect` docs and Supabase RLS docs checked for current framework guidance.
+- `npm.cmd run smoke` failed in RED phase because preview route and storefront shell were intentionally missing.
+- `npm.cmd run lint` passed.
+- `npm.cmd run typecheck` passed.
+- `npm.cmd run check` passed after implementation.
+- `npm.cmd run check` passed after code review patches.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed — comprehensive developer guide created.
 - Story 1.4 scope is preview-as-buyer only; products, Telegram, analytics ingestion, and public catalog implementation remain out of scope.
+- Added a shared buyer-facing storefront shell reused by public route and seller preview route.
+- Added protected `/seller/store/preview` route that loads only the authenticated seller's own store, shows a seller-only preview indicator, and includes an explicit return link.
+- Added a `/seller/store` preview entry point with a disabled text-first state until the public slug is saved.
+- Added a server-only public catalog seam returning buyer-visible published catalog items only; it returns an empty list until product persistence ships.
+- Code review fix: preview strips seller-only avatar data until the public storefront exposes the same buyer-facing avatar model.
+- Code review fix: story file normalized back to clean UTF-8 without BOM/mojibake noise.
+- Extended smoke guardrails for preview route build coverage, public/preview isolation, no draft/hidden placeholders, no analytics calls, and no service-role leakage.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/1-4-preview-store-as-buyer.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `scripts/smoke-foundation.mjs`
+- `src/app/(public)/[storeSlug]/page.tsx`
+- `src/app/(seller)/seller/(admin)/store/preview/page.tsx`
+- `src/features/store/public-catalog.ts`
+- `src/features/store/public-storefront-shell.tsx`
+- `src/features/store/store-profile-form.tsx`
 
 ### Change Log
 
 - 2026-08-01: Created Story 1.4 context package and marked ready for development.
+- 2026-08-01: Implemented seller preview-as-buyer route, shared public storefront shell, store-settings preview entry point, and preview guardrail checks.
+- 2026-08-01: Addressed code review findings: buyer-safe preview projection, public catalog seam, and clean story-file encoding.
