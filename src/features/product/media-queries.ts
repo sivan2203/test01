@@ -36,6 +36,12 @@ export type ProductMediaRowsResult =
   | { status: "unauthenticated" }
   | { status: "error" };
 
+export type SellerProductCoversResult =
+  | { status: "found"; covers: Map<string, string> }
+  | { status: "store_not_found" }
+  | { status: "unauthenticated" }
+  | { status: "error" };
+
 export function mapProductMediaRow(
   row: Omit<ProductMediaRow, "byte_size">,
   url: string,
@@ -138,6 +144,47 @@ export async function getSellerProductMedia(
     const media = await mapRowsToMedia(supabase, rowsResult.rows);
     if (!media) return { status: "error" };
     return { status: "found", media };
+  } catch {
+    return { status: "error" };
+  }
+}
+
+export async function getSellerProductCovers(
+  productIds: string[],
+): Promise<SellerProductCoversResult> {
+  if (productIds.length === 0) {
+    return { status: "found", covers: new Map() };
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) return { status: "unauthenticated" };
+
+    const storeResult = await getCurrentSellerStoreForProducts(supabase, user.id);
+    if (storeResult.status !== "found") return storeResult;
+
+    const { data: rows, error } = await supabase
+      .from("product_media")
+      .select("id, product_id, storage_path, mime_type, byte_size, sort_order")
+      .in("product_id", productIds)
+      .eq("sort_order", 0)
+      .order("product_id", { ascending: true })
+      .returns<ProductMediaRow[]>();
+
+    if (error) return { status: "error" };
+
+    const covers = new Map<string, string>();
+    for (const row of rows ?? []) {
+      const url = await createSignedProductMediaUrl(supabase, row.storage_path);
+      if (url) covers.set(row.product_id, url);
+    }
+
+    return { status: "found", covers };
   } catch {
     return { status: "error" };
   }

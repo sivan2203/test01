@@ -18,6 +18,10 @@ import {
   canTransitionProductStatus,
   validateProductPublication,
 } from "../src/features/product/lifecycle.ts";
+import {
+  matchesSellerProductListFilter,
+  parseSellerProductListFilter,
+} from "../src/features/product/product-list.ts";
 
 const root = process.cwd();
 const requiredPaths = [
@@ -50,6 +54,7 @@ const requiredPaths = [
   "src/features/product/product-state-control.tsx",
   "src/features/product/queries.ts",
   "src/features/product/schema.ts",
+  "src/features/product/product-list.ts",
   "src/features/store/actions.ts",
   "src/features/store/avatar.ts",
   "src/features/store/form-state.ts",
@@ -116,6 +121,23 @@ if (
   !routeManifest["/auth/callback/route"]
 ) {
   console.error("Foundation smoke check failed. Public routes are not built.");
+  process.exit(1);
+}
+
+if (
+  parseSellerProductListFilter(undefined) !== "all" ||
+  parseSellerProductListFilter("") !== "all" ||
+  parseSellerProductListFilter("unknown") !== "all" ||
+  parseSellerProductListFilter("draft") !== "draft" ||
+  parseSellerProductListFilter("published") !== "published" ||
+  parseSellerProductListFilter("hidden") !== "hidden" ||
+  parseSellerProductListFilter("deleted") !== "deleted" ||
+  !matchesSellerProductListFilter("draft", "all") ||
+  !matchesSellerProductListFilter("deleted", "deleted") ||
+  matchesSellerProductListFilter("deleted", "all") ||
+  matchesSellerProductListFilter("published", "draft")
+) {
+  console.error("Foundation smoke check failed. Seller product list filter contract is incomplete.");
   process.exit(1);
 }
 
@@ -458,6 +480,13 @@ const sellerProductEditSource = readFileSync(
 );
 if (
   !sellerProductsSource.includes("getSellerProducts") ||
+  !sellerProductsSource.includes("getSellerProductCovers") ||
+  !sellerProductsSource.includes("parseSellerProductListFilter") ||
+  !sellerProductsSource.includes("searchParams: Promise") ||
+  !sellerProductsSource.includes('aria-current={isActive ? "page" : undefined}') ||
+  !sellerProductsSource.includes('`/seller/products?status=${filter}`') ||
+  !sellerProductsSource.includes("PRODUCT_STATUS_DELETED") ||
+  !sellerProductsSource.includes("Архивный товар · редактор недоступен") ||
   !sellerProductsSource.includes('href="/seller/products/new"') ||
   !sellerProductsSource.includes('href={`/seller/products/${product.id}/edit`}') ||
   !sellerProductNewSource.includes("getCurrentSellerStoreProfile") ||
@@ -737,6 +766,34 @@ if (
   !mediaFeatureSource.includes("aria-label")
 ) {
   console.error("Foundation smoke check failed. Product media validation or privilege boundaries are incomplete.");
+  process.exit(1);
+}
+
+const productListSource = readFileSync(
+  join(root, "src/features/product/product-list.ts"),
+  "utf8",
+);
+const productQueriesSource = readFileSync(
+  join(root, "src/features/product/queries.ts"),
+  "utf8",
+);
+const productMediaQueriesSource = readFileSync(
+  join(root, "src/features/product/media-queries.ts"),
+  "utf8",
+);
+if (
+  !productListSource.includes("parseSellerProductListFilter") ||
+  !productListSource.includes("matchesSellerProductListFilter") ||
+  !productQueriesSource.includes("filter: SellerProductListFilter") ||
+  !productQueriesSource.includes('productQuery.neq("status", "deleted")') ||
+  !productQueriesSource.includes('productQuery.eq("status", filter)') ||
+  !productMediaQueriesSource.includes("getSellerProductCovers") ||
+  !productMediaQueriesSource.includes('.eq("sort_order", 0)') ||
+  !productMediaQueriesSource.includes("createSignedProductMediaUrl") ||
+  productQueriesSource.includes("createSupabaseServiceRoleClient") ||
+  productMediaQueriesSource.includes("createSupabaseServiceRoleClient")
+) {
+  console.error("Foundation smoke check failed. Seller product list query/media boundaries are incomplete.");
   process.exit(1);
 }
 

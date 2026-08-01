@@ -59,7 +59,7 @@ development_status:
   2-1-create-product-draft-manually: done
   2-2-manage-product-photos: done
   2-3-edit-product-and-manage-publication-state: done
-  2-4-seller-product-list-and-status-filters: backlog
+  2-4-seller-product-list-and-status-filters: review
   epic-2-retrospective: optional
   epic-3: backlog
   3-1-public-storefront-by-slug: backlog

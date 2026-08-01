@@ -7,6 +7,7 @@ import {
   type ProductPriceMode,
   type ProductStatus,
 } from "./schema";
+import type { SellerProductListFilter } from "./product-list";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -98,7 +99,9 @@ export async function getCurrentSellerStoreForProducts(
   return { status: "found" as const, storeId: data.id };
 }
 
-export async function getSellerProducts(): Promise<SellerProductsResult> {
+export async function getSellerProducts(
+  filter: SellerProductListFilter = "all",
+): Promise<SellerProductsResult> {
   try {
     const supabase = await createSupabaseServerClient();
     const {
@@ -115,13 +118,19 @@ export async function getSellerProducts(): Promise<SellerProductsResult> {
       return storeResult;
     }
 
-    const { data, error } = await supabase
+    let productQuery = supabase
       .from("products")
       .select(
         "id, store_id, title, description, price_mode, price_amount, availability_status, status, created_at, updated_at",
       )
-      .eq("store_id", storeResult.storeId)
-      .neq("status", "deleted")
+      .eq("store_id", storeResult.storeId);
+
+    productQuery =
+      filter === "all"
+        ? productQuery.neq("status", "deleted")
+        : productQuery.eq("status", filter);
+
+    const { data, error } = await productQuery
       .order("updated_at", { ascending: false })
       .returns<ProductRow[]>();
 
