@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-08-01
-last_updated: 2026-08-01
+last_updated: 2026-08-02
 project: test01
 project_key: NOKEY
 tracking_system: file-system
@@ -64,7 +64,7 @@ development_status:
   epic-3: in-progress
   3-1-public-storefront-by-slug: done
   3-2-buyer-catalog-list-grid-view: done
-  3-3-public-product-detail-page: backlog
+  3-3-public-product-detail-page: done
   3-4-configure-telegram-contact-channel: backlog
   3-5-telegram-handoff-with-prefilled-product-message: backlog
   epic-3-retrospective: optional

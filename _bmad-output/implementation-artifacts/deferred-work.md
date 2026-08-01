@@ -20,3 +20,9 @@
 - Invalid/non-array catalog RPC data being treated as an empty catalog is deferred because that behavior pre-dates the current change and requires a broader public-catalog result-contract decision.
 - Runtime Supabase/RLS integration coverage for RPC, Storage policy, and partial media failures is deferred because the repository has no integration harness or fixtures.
 - Rollback documentation for the public avatar migration is deferred as an operational documentation task.
+
+## Deferred from: code review of 3-3-public-product-detail-page (2026-08-02)
+
+- Configured contact CTA handoff and destination-specific accessible labeling remain deferred to Stories 3.4/3.5 because Telegram configuration and external handoff are explicitly outside Story 3.3.
+- Runtime/browser coverage for route, not-found/error, and signed-media failure paths remains deferred because the repository has no runtime Supabase/integration harness; source-level smoke checks remain in place.
+- Consolidation of the catalog-local contact CTA with the new shared CTA remains deferred to the Telegram contact-loop work because the duplicate implementation predates Story 3.3 and is outside the detail-page scope.

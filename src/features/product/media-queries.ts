@@ -250,9 +250,8 @@ export async function getPublishedProductMediaForCatalog(
   const grouped = new Map<string, ProductMedia[]>();
   for (const [index, row] of mediaRows.entries()) {
     const url = signedUrlsByIndex[index];
-    if (!url) continue;
     const current = grouped.get(row.product_id) ?? [];
-    current.push(mapProductMediaRow(row, url));
+    current.push(mapProductMediaRow(row, url ?? ""));
     grouped.set(row.product_id, current);
   }
 

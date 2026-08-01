@@ -28,6 +28,7 @@ const root = process.cwd();
 const requiredPaths = [
   "src/app/page.tsx",
   "src/app/(public)/[storeSlug]/page.tsx",
+  "src/app/(public)/[storeSlug]/products/[productId]/page.tsx",
   "src/app/(public)/[storeSlug]/not-found.tsx",
   "src/app/(public)/[storeSlug]/error.tsx",
   "src/app/(seller)/seller/(admin)/layout.tsx",
@@ -64,6 +65,9 @@ const requiredPaths = [
   "src/features/store/form-state.ts",
   "src/features/store/public-catalog.ts",
   "src/features/store/public-catalog-view.tsx",
+  "src/features/store/public-contact-cta.tsx",
+  "src/features/store/public-product-detail.tsx",
+  "src/features/store/public-product-gallery.tsx",
   "src/features/store/public-storefront-image.tsx",
   "src/features/store/public-storefront-shell.tsx",
   "src/features/store/public-queries.ts",
@@ -117,6 +121,7 @@ const routeManifest = JSON.parse(readFileSync(routeManifestPath, "utf8"));
 if (
   !routeManifest["/page"] ||
   !routeManifest["/(public)/[storeSlug]/page"] ||
+  !routeManifest["/(public)/[storeSlug]/products/[productId]/page"] ||
   !routeManifest["/(seller)/seller/(admin)/page"] ||
   !routeManifest["/(seller)/seller/(admin)/products/page"] ||
   !routeManifest["/(seller)/seller/(admin)/products/new/page"] ||
@@ -627,6 +632,22 @@ const publicCatalogViewSource = readFileSync(
   join(root, "src/features/store/public-catalog-view.tsx"),
   "utf8",
 );
+const publicProductPageSource = readFileSync(
+  join(root, "src/app/(public)/[storeSlug]/products/[productId]/page.tsx"),
+  "utf8",
+);
+const publicProductDetailSource = readFileSync(
+  join(root, "src/features/store/public-product-detail.tsx"),
+  "utf8",
+);
+const publicProductGallerySource = readFileSync(
+  join(root, "src/features/store/public-product-gallery.tsx"),
+  "utf8",
+);
+const publicContactCtaSource = readFileSync(
+  join(root, "src/features/store/public-contact-cta.tsx"),
+  "utf8",
+);
 if (
   !publicStorePageSource.includes("getPublicStoreBySlug") ||
   !publicStorePageSource.includes("getPublicCatalogItemsForStore") ||
@@ -721,6 +742,44 @@ if (
   publicStorefrontShellSource.includes("navigator.sendBeacon")
 ) {
   console.error("Foundation smoke check failed. Preview/public storefront shell boundaries are incomplete.");
+  process.exit(1);
+}
+
+if (
+  !publicProductPageSource.includes("getPublicProductForStore") ||
+  !publicProductPageSource.includes("PublicProductDetail") ||
+  !publicProductPageSource.includes('dynamic = "force-dynamic"') ||
+  !publicProductPageSource.includes("params: Promise") ||
+  !publicProductPageSource.includes("notFound()") ||
+  !publicProductPageSource.includes('productResult.status === "not_found"') ||
+  !publicProductPageSource.includes('productResult.status === "error"') ||
+  publicProductPageSource.includes("createSupabaseServiceRoleClient") ||
+  publicProductPageSource.includes("service-role") ||
+  publicProductPageSource.includes("(seller)") ||
+  !publicProductDetailSource.includes("PublicProductGallery") ||
+  !publicProductDetailSource.includes("getProductPriceLabel") ||
+  !publicProductDetailSource.includes("PublicProductContactCta") ||
+  !publicProductDetailSource.includes("encodeURIComponent") ||
+  !publicProductDetailSource.includes("availabilityStatus") ||
+  !publicProductDetailSource.includes("description") ||
+  !publicProductDetailSource.includes("href={storefrontHref}") ||
+  !publicProductGallerySource.includes('"use client"') ||
+  !publicProductGallerySource.includes("PublicStorefrontImage") ||
+  !publicProductGallerySource.includes("onTouchStart") ||
+  !publicProductGallerySource.includes("onTouchEnd") ||
+  !publicProductGallerySource.includes("aria-live") ||
+  !publicProductGallerySource.includes("aria-pressed") ||
+  !publicProductGallerySource.includes("disabled={renderIndex") ||
+  !publicProductGallerySource.includes("onTouchCancel") ||
+  !publicProductGallerySource.includes("Math.abs(deltaX) <= Math.abs(deltaY)") ||
+  !publicContactCtaSource.includes("data-contact-product-id") ||
+  !publicContactCtaSource.includes("data-contact-store-slug") ||
+  !publicContactCtaSource.includes("disabled={!contactConfigured}") ||
+  publicProductPageSource.includes("createSupabaseServiceRoleClient") ||
+  publicProductDetailSource.includes("recordAnalytics") ||
+  publicProductGallerySource.includes("storage_path")
+) {
+  console.error("Foundation smoke check failed. Public product detail boundaries are incomplete.");
   process.exit(1);
 }
 
@@ -891,6 +950,7 @@ if (
   !productMediaQueriesSource.includes("getSellerProductCovers") ||
   !productMediaQueriesSource.includes('.eq("sort_order", 0)') ||
   !productMediaQueriesSource.includes("createSignedProductMediaUrl") ||
+  !productMediaQueriesSource.includes('mapProductMediaRow(row, url ?? "")') ||
   productQueriesSource.includes("createSupabaseServiceRoleClient") ||
   productMediaQueriesSource.includes("createSupabaseServiceRoleClient")
 ) {
