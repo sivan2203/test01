@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   getSafeSellerRedirectPath,
@@ -22,6 +22,12 @@ const requiredPaths = [
   "src/features/seller-auth/actions.ts",
   "src/features/seller-auth/redirect.ts",
   "src/features/seller-auth/sign-in-form.tsx",
+  "src/features/store/actions.ts",
+  "src/features/store/avatar.ts",
+  "src/features/store/form-state.ts",
+  "src/features/store/queries.ts",
+  "src/features/store/schema.ts",
+  "src/features/store/store-profile-form.tsx",
   "src/lib/supabase/browser.ts",
   "src/lib/supabase/server.ts",
   "src/lib/supabase/proxy.ts",
@@ -70,6 +76,7 @@ if (
   !routeManifest["/page"] ||
   !routeManifest["/(public)/[storeSlug]/page"] ||
   !routeManifest["/(seller)/seller/(admin)/page"] ||
+  !routeManifest["/(seller)/seller/(admin)/store/page"] ||
   !routeManifest["/(seller)/seller/sign-in/page"] ||
   !routeManifest["/auth/callback/route"]
 ) {
@@ -164,6 +171,129 @@ const serviceRole = readFileSync(
 );
 if (!serviceRole.includes('import "server-only"')) {
   console.error("Foundation smoke check failed. Service role module is not server-only.");
+  process.exit(1);
+}
+
+const migrationDir = join(root, "supabase/migrations");
+const storeMigrationName = readdirSync(migrationDir).find((fileName) =>
+  fileName.endsWith("_create_stores.sql"),
+);
+if (!storeMigrationName) {
+  console.error("Foundation smoke check failed. Store profile migration is missing.");
+  process.exit(1);
+}
+
+const storeMigration = readFileSync(join(migrationDir, storeMigrationName), "utf8");
+const requiredStoreMigrationSnippets = [
+  "create table if not exists public.stores",
+  "seller_id uuid not null references auth.users(id) on delete cascade",
+  "constraint stores_seller_id_key unique (seller_id)",
+  "constraint stores_avatar_path_owner_check check",
+  "split_part(avatar_path, '/', 1) = seller_id::text",
+  "timezone text not null default 'Europe/Moscow'",
+  "alter table public.stores enable row level security",
+  "to authenticated",
+  "(select auth.uid()) = seller_id",
+  "store-avatars",
+  "storage.objects",
+  "storage.foldername(name)",
+];
+if (
+  requiredStoreMigrationSnippets.some(
+    (snippet) => !storeMigration.includes(snippet),
+  ) ||
+  storeMigration.includes(" slug ")
+) {
+  console.error("Foundation smoke check failed. Store migration/RLS boundaries are incomplete.");
+  process.exit(1);
+}
+
+const storeFeatureFiles = [
+  "src/features/store/actions.ts",
+  "src/features/store/avatar.ts",
+  "src/features/store/form-state.ts",
+  "src/features/store/queries.ts",
+  "src/features/store/schema.ts",
+  "src/features/store/store-profile-form.tsx",
+];
+const storeFeatureSource = storeFeatureFiles
+  .map((filePath) => readFileSync(join(root, filePath), "utf8"))
+  .join("\n");
+if (
+  storeFeatureSource.includes("createSupabaseServiceRoleClient") ||
+  storeFeatureSource.includes("service-role")
+) {
+  console.error("Foundation smoke check failed. Store feature imports service-role code.");
+  process.exit(1);
+}
+
+if (
+  !storeFeatureSource.includes("STORE_DEFAULT_TIMEZONE = \"Europe/Moscow\"") ||
+  !storeFeatureSource.includes("STORE_NAME_MAX_LENGTH = 80") ||
+  !storeFeatureSource.includes("STORE_OPTIONAL_TEXT_MAX_LENGTH = 500") ||
+  !storeFeatureSource.includes("countStoreTextCharacters") ||
+  !storeFeatureSource.includes("Array.from(value).length") ||
+  !storeFeatureSource.includes("STORE_AVATAR_MAX_BYTES = 2 * 1024 * 1024") ||
+  !storeFeatureSource.includes("\"image/jpeg\"") ||
+  !storeFeatureSource.includes("\"image/png\"") ||
+  !storeFeatureSource.includes("\"image/webp\"") ||
+  !storeFeatureSource.includes("validateStoreAvatarSignature") ||
+  !storeFeatureSource.includes("file.slice(0, 12).arrayBuffer()") ||
+  !storeFeatureSource.includes("seller_id: user.id") ||
+  storeFeatureSource.includes('formData.get("seller_id")')
+) {
+  console.error("Foundation smoke check failed. Store profile validation or ownership boundaries are incomplete.");
+  process.exit(1);
+}
+
+const storeQueriesSource = readFileSync(
+  join(root, "src/features/store/queries.ts"),
+  "utf8",
+);
+if (
+  !storeQueriesSource.includes('status: "error"') ||
+  !storeQueriesSource.includes('status: "not_found"') ||
+  !storeQueriesSource.includes('status: "found"') ||
+  storeQueriesSource.includes("if (error || !data)") ||
+  storeQueriesSource.includes("catch {\n    return null;")
+) {
+  console.error("Foundation smoke check failed. Store profile query errors can be mistaken for empty state.");
+  process.exit(1);
+}
+
+const storeActionSource = readFileSync(
+  join(root, "src/features/store/actions.ts"),
+  "utf8",
+);
+if (
+  !storeActionSource.includes("uploadedAvatarPath") ||
+  !storeActionSource.includes("existingStoreError") ||
+  !storeActionSource.includes("Выберите фото ещё раз после исправления полей.") ||
+  !storeActionSource.includes("remove([uploadedAvatarPath])") ||
+  !storeActionSource.includes("validateStoreAvatarSignature")
+) {
+  console.error("Foundation smoke check failed. Store avatar lifecycle review guardrails are incomplete.");
+  process.exit(1);
+}
+
+const sellerHomeSource = readFileSync(
+  join(root, "src/app/(seller)/seller/(admin)/page.tsx"),
+  "utf8",
+);
+if (!sellerHomeSource.includes('href="/seller/store"')) {
+  console.error("Foundation smoke check failed. Seller home CTA does not open store setup.");
+  process.exit(1);
+}
+
+const sellerStorePageSource = readFileSync(
+  join(root, "src/app/(seller)/seller/(admin)/store/page.tsx"),
+  "utf8",
+);
+if (
+  !sellerStorePageSource.includes("getCurrentSellerStoreProfile") ||
+  !sellerStorePageSource.includes("StoreProfileForm")
+) {
+  console.error("Foundation smoke check failed. Seller store page does not render the profile editor.");
   process.exit(1);
 }
 

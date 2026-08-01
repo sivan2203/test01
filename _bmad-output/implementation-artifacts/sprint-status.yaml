@@ -51,7 +51,7 @@ development_status:
   epic-1: in-progress
   1-0-initialize-greenfield-web-app-foundation: done
   1-1-seller-sign-in-and-mobile-admin-shell: done
-  1-2-create-and-edit-store-profile: backlog
+  1-2-create-and-edit-store-profile: done
   1-3-configure-public-store-slug: backlog
   1-4-preview-store-as-buyer: backlog
   epic-1-retrospective: optional

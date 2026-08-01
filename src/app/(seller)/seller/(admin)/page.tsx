@@ -1,5 +1,7 @@
+import Link from "next/link";
+
 import { GlassPanel } from "@/components/design-system";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function SellerHomePage() {
   return (
@@ -11,9 +13,9 @@ export default function SellerHomePage() {
           Здесь появится краткая аналитика, когда магазин и товары будут
           опубликованы. Сейчас главный шаг — создать базовую витрину.
         </p>
-        <Button className="mt-5 w-full" type="button">
+        <Link className={buttonVariants({ className: "mt-5 w-full" })} href="/seller/store">
           Создать витрину
-        </Button>
+        </Link>
       </GlassPanel>
     </main>
   );
