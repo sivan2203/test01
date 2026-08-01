@@ -63,6 +63,7 @@ const requiredPaths = [
   "src/features/store/avatar.ts",
   "src/features/store/form-state.ts",
   "src/features/store/public-catalog.ts",
+  "src/features/store/public-catalog-view.tsx",
   "src/features/store/public-storefront-image.tsx",
   "src/features/store/public-storefront-shell.tsx",
   "src/features/store/public-queries.ts",
@@ -622,6 +623,10 @@ const publicStorefrontImageSource = readFileSync(
   join(root, "src/features/store/public-storefront-image.tsx"),
   "utf8",
 );
+const publicCatalogViewSource = readFileSync(
+  join(root, "src/features/store/public-catalog-view.tsx"),
+  "utf8",
+);
 if (
   !publicStorePageSource.includes("getPublicStoreBySlug") ||
   !publicStorePageSource.includes("getPublicCatalogItemsForStore") ||
@@ -706,11 +711,12 @@ if (
   publicStorefrontShellSource.includes("analytics.track") ||
   publicStorefrontShellSource.includes("navigator.sendBeacon") ||
   publicStorefrontShellSource.includes("fetch(\"/api/analytics") ||
-  !publicStorefrontShellSource.includes("catalogItems.map") ||
-  !publicStorefrontShellSource.includes("<article") ||
-  !publicStorefrontShellSource.includes("availabilityStatus") ||
-  !publicStorefrontShellSource.includes("getProductPriceLabel") ||
-  !publicStorefrontShellSource.includes("Нет фото") ||
+  !publicStorefrontShellSource.includes("PublicCatalogView") ||
+  !publicCatalogViewSource.includes("catalogItems.map") ||
+  !publicCatalogViewSource.includes("<article") ||
+  !publicCatalogViewSource.includes("availabilityStatus") ||
+  !publicCatalogViewSource.includes("getProductPriceLabel") ||
+  !publicCatalogViewSource.includes("Нет фото") ||
   publicStorefrontShellSource.includes("recordAnalytics") ||
   publicStorefrontShellSource.includes("navigator.sendBeacon")
 ) {
@@ -1007,6 +1013,35 @@ if (
   publicCatalogMediaSource.includes("createSupabaseServiceRoleClient")
 ) {
   console.error("Foundation smoke check failed. Public catalog media boundary is incomplete.");
+  process.exit(1);
+}
+
+if (
+  !publicCatalogViewSource.includes("PublicCatalogItem") ||
+  !publicCatalogViewSource.includes("getProductPriceLabel") ||
+  !publicCatalogViewSource.includes("ProductMedia") ||
+  !publicCatalogViewSource.includes("PUBLIC_CATALOG_VIEW_STORAGE_KEY") ||
+  !publicCatalogViewSource.includes('"grid"') ||
+  !publicCatalogViewSource.includes('"list"') ||
+  !publicCatalogViewSource.includes("readStoredCatalogView") ||
+  !publicCatalogViewSource.includes("window.localStorage") ||
+  !publicCatalogViewSource.includes("queueMicrotask") ||
+  !publicCatalogViewSource.includes("aria-pressed") ||
+  !publicCatalogViewSource.includes("grid-cols-2") ||
+  !publicCatalogViewSource.includes("flex flex-col gap-4") ||
+  !publicCatalogViewSource.includes('from "next/link"') ||
+  !publicCatalogViewSource.includes("getPublicProductDetailHref") ||
+  !publicCatalogViewSource.includes("data-contact-product-id") ||
+  !publicCatalogViewSource.includes("data-contact-store-slug") ||
+  !publicCatalogViewSource.includes("disabled={!contactConfigured}") ||
+  !publicCatalogViewSource.includes("productId") ||
+  !publicCatalogViewSource.includes("storeSlug") ||
+  publicCatalogViewSource.includes("createSupabaseServiceRoleClient") ||
+  publicCatalogViewSource.includes("service-role") ||
+  publicCatalogViewSource.includes("navigator.sendBeacon") ||
+  publicCatalogViewSource.includes("/api/analytics")
+) {
+  console.error("Foundation smoke check failed. Buyer catalog view model is incomplete.");
   process.exit(1);
 }
 

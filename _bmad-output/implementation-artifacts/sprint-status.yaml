@@ -63,7 +63,7 @@ development_status:
   epic-2-retrospective: optional
   epic-3: in-progress
   3-1-public-storefront-by-slug: done
-  3-2-buyer-catalog-list-grid-view: backlog
+  3-2-buyer-catalog-list-grid-view: done
   3-3-public-product-detail-page: backlog
   3-4-configure-telegram-contact-channel: backlog
   3-5-telegram-handoff-with-prefilled-product-message: backlog

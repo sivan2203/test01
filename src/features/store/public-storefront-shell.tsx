@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
 
 import { GlassPanel } from "@/components/design-system";
-import { getProductPriceLabel } from "@/features/product/schema";
-import { cn } from "@/lib/utils";
 import type { PublicCatalogItem } from "./public-catalog";
+import { PublicCatalogView } from "./public-catalog-view";
 import { PublicStorefrontImage } from "./public-storefront-image";
 
 export type BuyerFacingStoreProfile = {
@@ -74,54 +73,7 @@ export function PublicStorefrontShell({
           </div>
         </div>
 
-        {catalogItems.length > 0 ? (
-          <div aria-labelledby="store-catalog" className="mt-4 grid gap-4 sm:grid-cols-2">
-            {catalogItems.map((item) => {
-              const cover = item.media.find((media) => media.isCover) ?? item.media[0];
-              const availabilityLabel =
-                item.availabilityStatus === "out_of_stock"
-                  ? "Нет в наличии"
-                  : "В наличии";
-
-              return (
-                <article
-                  className="overflow-hidden rounded-2xl border border-border bg-surface-raised"
-                  key={item.id}
-                >
-                  <PublicStorefrontImage
-                    alt={`Фото товара: ${item.title}`}
-                    className="h-48 w-full object-cover"
-                    fallbackClassName="h-48 w-full"
-                    fallbackLabel="Нет фото"
-                    src={cover?.url}
-                  />
-                  <div className="space-y-3 p-4">
-                    <h3 className="break-words text-lg font-semibold">{item.title}</h3>
-                    <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                      <span className="break-words font-medium">
-                        {getProductPriceLabel(item.priceMode, item.priceAmount)}
-                      </span>
-                      <span
-                        className={cn(
-                          "rounded-full border px-3 py-1 text-xs",
-                          item.availabilityStatus === "out_of_stock"
-                            ? "border-border text-foreground/60"
-                            : "border-foreground/20 text-foreground/80",
-                        )}
-                      >
-                        {availabilityLabel}
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="mt-4 rounded-2xl border border-border bg-surface-raised p-4 text-sm leading-6 text-foreground/70">
-            Пока нет опубликованных товаров. Загляните позже.
-          </p>
-        )}
+        <PublicCatalogView catalogItems={catalogItems} storeSlug={store.slug} />
       </GlassPanel>
 
       {returnAction ? <div className="pb-2">{returnAction}</div> : null}
