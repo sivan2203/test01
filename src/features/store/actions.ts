@@ -16,12 +16,40 @@ import {
   validateStoreProfileValues,
 } from "./schema";
 
+const AVATAR_RESELECT_MESSAGE =
+  "Выберите фото ещё раз после исправления полей.";
+const SLUG_TAKEN_MESSAGE =
+  "Такая ссылка уже занята. Попробуйте другой вариант.";
+
+type SupabaseErrorLike = {
+  code?: string;
+};
+
+function isUniqueViolation(error: SupabaseErrorLike | null) {
+  return error?.code === "23505";
+}
+
+function getFieldErrorsWithAvatarReselect(
+  fieldErrors: StoreProfileFormState["fieldErrors"],
+  shouldRequestAvatarReselect: boolean,
+) {
+  if (!shouldRequestAvatarReselect || fieldErrors.avatar) {
+    return fieldErrors;
+  }
+
+  return {
+    ...fieldErrors,
+    avatar: AVATAR_RESELECT_MESSAGE,
+  };
+}
+
 export async function saveStoreProfile(
   previousState: StoreProfileFormState,
   formData: FormData,
 ): Promise<StoreProfileFormState> {
   const values = {
     name: String(formData.get("name") ?? ""),
+    slug: String(formData.get("slug") ?? ""),
     description: String(formData.get("description") ?? ""),
     additionalInfo: String(formData.get("additionalInfo") ?? ""),
   };
@@ -33,6 +61,9 @@ export async function saveStoreProfile(
     avatarFile && avatarValidation.isValid && avatarValidation.extension
       ? await validateStoreAvatarSignature(avatarFile, avatarValidation.extension)
       : { isValid: true as const };
+  const shouldRequestAvatarReselect = Boolean(
+    avatarFile && avatarValidation.isValid && avatarSignatureValidation.isValid,
+  );
 
   if (!avatarValidation.isValid) {
     validation.fieldErrors.avatar = avatarValidation.error;
@@ -40,16 +71,6 @@ export async function saveStoreProfile(
 
   if (!avatarSignatureValidation.isValid) {
     validation.fieldErrors.avatar = avatarSignatureValidation.error;
-  }
-
-  if (
-    avatarFile &&
-    validation.isValid === false &&
-    avatarValidation.isValid &&
-    avatarSignatureValidation.isValid
-  ) {
-    validation.fieldErrors.avatar =
-      "Выберите фото ещё раз после исправления полей.";
   }
 
   if (
@@ -61,7 +82,10 @@ export async function saveStoreProfile(
       status: "error",
       message: "Проверьте поля и сохраните магазин ещё раз.",
       values: validation.values,
-      fieldErrors: validation.fieldErrors,
+      fieldErrors: getFieldErrorsWithAvatarReselect(
+        validation.fieldErrors,
+        shouldRequestAvatarReselect && !validation.isValid,
+      ),
       avatarUrl: previousState.avatarUrl,
     };
   }
@@ -87,6 +111,40 @@ export async function saveStoreProfile(
       };
     }
 
+    if (validation.values.slug) {
+      const { data: isSlugAvailable, error: slugAvailabilityError } =
+        await supabase.rpc("is_store_slug_available", {
+          candidate_slug: validation.values.slug,
+        });
+
+      if (slugAvailabilityError) {
+        return {
+          status: "error",
+          message:
+            "Не удалось проверить публичную ссылку. Попробуйте сохранить ещё раз.",
+          values: validation.values,
+          fieldErrors: getFieldErrorsWithAvatarReselect(
+            {},
+            shouldRequestAvatarReselect,
+          ),
+          avatarUrl: previousState.avatarUrl,
+        };
+      }
+
+      if (isSlugAvailable === false) {
+        return {
+          status: "error",
+          message: "Проверьте публичную ссылку магазина.",
+          values: validation.values,
+          fieldErrors: getFieldErrorsWithAvatarReselect(
+            { slug: SLUG_TAKEN_MESSAGE },
+            shouldRequestAvatarReselect,
+          ),
+          avatarUrl: previousState.avatarUrl,
+        };
+      }
+    }
+
     const { data: existingStore, error: existingStoreError } = await supabase
       .from("stores")
       .select("avatar_path")
@@ -96,9 +154,13 @@ export async function saveStoreProfile(
     if (existingStoreError) {
       return {
         status: "error",
-        message: "Не удалось загрузить текущие данные магазина. Попробуйте ещё раз.",
+        message:
+          "Не удалось загрузить текущие данные магазина. Попробуйте ещё раз.",
         values: validation.values,
-        fieldErrors: {},
+        fieldErrors: getFieldErrorsWithAvatarReselect(
+          {},
+          shouldRequestAvatarReselect,
+        ),
         avatarUrl: previousState.avatarUrl,
       };
     }
@@ -136,6 +198,7 @@ export async function saveStoreProfile(
         {
           seller_id: user.id,
           name: validation.values.name,
+          slug: validation.values.slug || null,
           avatar_path: avatarPath,
           description: normalizeOptionalStoreText(validation.values.description),
           additional_info: normalizeOptionalStoreText(validation.values.additionalInfo),
@@ -151,9 +214,23 @@ export async function saveStoreProfile(
         await supabase.storage.from(STORE_AVATAR_BUCKET).remove([uploadedAvatarPath]);
       }
 
+      if (isUniqueViolation(saveError)) {
+        return {
+          status: "error",
+          message: "Проверьте публичную ссылку магазина.",
+          values: validation.values,
+          fieldErrors: getFieldErrorsWithAvatarReselect(
+            { slug: SLUG_TAKEN_MESSAGE },
+            shouldRequestAvatarReselect,
+          ),
+          avatarUrl: previousState.avatarUrl,
+        };
+      }
+
       return {
         status: "error",
-        message: "Не удалось сохранить магазин. Проверьте данные и попробуйте ещё раз.",
+        message:
+          "Не удалось сохранить магазин. Проверьте данные и попробуйте ещё раз.",
         values: validation.values,
         fieldErrors: {},
         avatarUrl: previousState.avatarUrl,
@@ -180,6 +257,15 @@ export async function saveStoreProfile(
 
     revalidatePath("/seller");
     revalidatePath("/seller/store");
+    if (validation.values.slug) {
+      revalidatePath(`/${validation.values.slug}`);
+    }
+    if (
+      previousState.values.slug &&
+      previousState.values.slug !== validation.values.slug
+    ) {
+      revalidatePath(`/${previousState.values.slug}`);
+    }
 
     return {
       status: "success",

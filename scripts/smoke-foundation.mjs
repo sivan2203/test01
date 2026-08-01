@@ -25,6 +25,7 @@ const requiredPaths = [
   "src/features/store/actions.ts",
   "src/features/store/avatar.ts",
   "src/features/store/form-state.ts",
+  "src/features/store/public-queries.ts",
   "src/features/store/queries.ts",
   "src/features/store/schema.ts",
   "src/features/store/store-profile-form.tsx",
@@ -208,10 +209,49 @@ if (
   process.exit(1);
 }
 
+const storeSlugMigrationName = readdirSync(migrationDir).find((fileName) =>
+  fileName.endsWith("_add_store_slug.sql"),
+);
+if (!storeSlugMigrationName) {
+  console.error("Foundation smoke check failed. Store slug migration is missing.");
+  process.exit(1);
+}
+
+const storeSlugMigration = readFileSync(
+  join(migrationDir, storeSlugMigrationName),
+  "utf8",
+);
+const requiredStoreSlugMigrationSnippets = [
+  "add column if not exists slug text",
+  "stores_slug_format_check",
+  "char_length(slug) between 3 and 32",
+  "slug = lower(slug)",
+  "slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'",
+  "stores_slug_reserved_check",
+  "'admin', 'api', 'login', 'signup', 'support', 'help', 'seller'",
+  "stores_slug_unique_idx",
+  "where slug is not null",
+  "is_store_slug_available",
+  "candidate_slug",
+  "get_public_store_by_slug",
+  "grant execute on function public.get_public_store_by_slug(text) to anon, authenticated",
+];
+if (
+  requiredStoreSlugMigrationSnippets.some(
+    (snippet) => !storeSlugMigration.includes(snippet),
+  ) ||
+  /slug_(history|alias|redirect)/i.test(storeSlugMigration) ||
+  /create\s+table[\s\S]*(slug_history|slug_alias|redirect)/i.test(storeSlugMigration)
+) {
+  console.error("Foundation smoke check failed. Store slug migration boundaries are incomplete.");
+  process.exit(1);
+}
+
 const storeFeatureFiles = [
   "src/features/store/actions.ts",
   "src/features/store/avatar.ts",
   "src/features/store/form-state.ts",
+  "src/features/store/public-queries.ts",
   "src/features/store/queries.ts",
   "src/features/store/schema.ts",
   "src/features/store/store-profile-form.tsx",
@@ -231,6 +271,11 @@ if (
   !storeFeatureSource.includes("STORE_DEFAULT_TIMEZONE = \"Europe/Moscow\"") ||
   !storeFeatureSource.includes("STORE_NAME_MAX_LENGTH = 80") ||
   !storeFeatureSource.includes("STORE_OPTIONAL_TEXT_MAX_LENGTH = 500") ||
+  !storeFeatureSource.includes("STORE_SLUG_MIN_LENGTH = 3") ||
+  !storeFeatureSource.includes("STORE_SLUG_MAX_LENGTH = 32") ||
+  !storeFeatureSource.includes("STORE_RESERVED_SLUGS") ||
+  !storeFeatureSource.includes("validateStoreSlug") ||
+  !storeFeatureSource.includes("normalizeStoreSlug") ||
   !storeFeatureSource.includes("countStoreTextCharacters") ||
   !storeFeatureSource.includes("Array.from(value).length") ||
   !storeFeatureSource.includes("STORE_AVATAR_MAX_BYTES = 2 * 1024 * 1024") ||
@@ -239,6 +284,13 @@ if (
   !storeFeatureSource.includes("\"image/webp\"") ||
   !storeFeatureSource.includes("validateStoreAvatarSignature") ||
   !storeFeatureSource.includes("file.slice(0, 12).arrayBuffer()") ||
+  !storeFeatureSource.includes("is_store_slug_available") ||
+  !storeFeatureSource.includes("candidate_slug") ||
+  !storeFeatureSource.includes("23505") ||
+  !storeFeatureSource.includes("SLUG_TAKEN_MESSAGE") ||
+  !storeFeatureSource.includes('name="slug"') ||
+  !storeFeatureSource.includes("navigator.clipboard.writeText") ||
+  !storeFeatureSource.includes("navigator.share") ||
   !storeFeatureSource.includes("seller_id: user.id") ||
   storeFeatureSource.includes('formData.get("seller_id")')
 ) {
@@ -270,7 +322,9 @@ if (
   !storeActionSource.includes("existingStoreError") ||
   !storeActionSource.includes("Выберите фото ещё раз после исправления полей.") ||
   !storeActionSource.includes("remove([uploadedAvatarPath])") ||
-  !storeActionSource.includes("validateStoreAvatarSignature")
+  !storeActionSource.includes("validateStoreAvatarSignature") ||
+  !storeActionSource.includes("{ slug: SLUG_TAKEN_MESSAGE }") ||
+  !storeActionSource.includes("getFieldErrorsWithAvatarReselect(")
 ) {
   console.error("Foundation smoke check failed. Store avatar lifecycle review guardrails are incomplete.");
   process.exit(1);
@@ -294,6 +348,37 @@ if (
   !sellerStorePageSource.includes("StoreProfileForm")
 ) {
   console.error("Foundation smoke check failed. Seller store page does not render the profile editor.");
+  process.exit(1);
+}
+
+const publicStorePageSource = readFileSync(
+  join(root, "src/app/(public)/[storeSlug]/page.tsx"),
+  "utf8",
+);
+const publicStoreQuerySource = readFileSync(
+  join(root, "src/features/store/public-queries.ts"),
+  "utf8",
+);
+if (
+  !publicStorePageSource.includes("getPublicStoreBySlug") ||
+  !publicStorePageSource.includes("notFound()") ||
+  !publicStorePageSource.includes('storeResult.status === "error"') ||
+  !publicStorePageSource.includes('throw new Error("Public store lookup failed.")') ||
+  !publicStorePageSource.includes('dynamic = "force-dynamic"') ||
+  publicStorePageSource.includes("Public storefront route") ||
+  publicStorePageSource.includes("variant=\"telegram\"") ||
+  !publicStoreQuerySource.includes("get_public_store_by_slug") ||
+  !publicStoreQuerySource.includes('status: "found"') ||
+  !publicStoreQuerySource.includes('status: "not_found"') ||
+  !publicStoreQuerySource.includes('status: "error"') ||
+  !publicStoreQuerySource.includes("normalizedSlug !== storeSlug") ||
+  !publicStoreQuerySource.includes("validateStoreSlug(storeSlug, { allowEmpty: false })") ||
+  !publicStoreQuerySource.includes("createSupabaseServerClient") ||
+  publicStoreQuerySource.includes("return null") ||
+  publicStoreQuerySource.includes("id: string") ||
+  publicStoreQuerySource.includes("id:")
+) {
+  console.error("Foundation smoke check failed. Public store slug route can render invalid or old slugs.");
   process.exit(1);
 }
 

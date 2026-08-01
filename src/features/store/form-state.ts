@@ -20,6 +20,7 @@ export function getInitialStoreProfileFormState(
     message: "",
     values: {
       name: store?.name ?? "",
+      slug: store?.slug ?? "",
       description: store?.description ?? "",
       additionalInfo: store?.additionalInfo ?? "",
     },
