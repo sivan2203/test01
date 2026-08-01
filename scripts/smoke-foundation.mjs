@@ -5,6 +5,12 @@ import {
   getSellerReturnPath,
   SELLER_SIGN_IN_PATH,
 } from "../src/proxy-rules.mjs";
+import {
+  canRemoveProductMedia,
+  normalizeProductMediaOrder,
+  validateProductMediaFile,
+  validateProductMediaSignature,
+} from "../src/features/product/media-schema.ts";
 
 const root = process.cwd();
 const requiredPaths = [
@@ -28,6 +34,10 @@ const requiredPaths = [
   "src/features/product/actions.ts",
   "src/features/product/form-state.ts",
   "src/features/product/product-form.tsx",
+  "src/features/product/media-actions.ts",
+  "src/features/product/media-queries.ts",
+  "src/features/product/media-schema.ts",
+  "src/features/product/product-media-manager.tsx",
   "src/features/product/queries.ts",
   "src/features/product/schema.ts",
   "src/features/store/actions.ts",
@@ -582,6 +592,145 @@ if (
   !productMigrationSource.includes("products.status = 'published'")
 ) {
   console.error("Foundation smoke check failed. Product migration boundaries are incomplete.");
+  process.exit(1);
+}
+
+const productMediaMigrationName = readdirSync(migrationDir).find((fileName) =>
+  fileName.endsWith("_create_product_media.sql"),
+);
+if (!productMediaMigrationName) {
+  console.error("Foundation smoke check failed. Product media migration is missing.");
+  process.exit(1);
+}
+
+const productMediaMigration = readFileSync(
+  join(migrationDir, productMediaMigrationName),
+  "utf8",
+);
+const nextConfigSource = readFileSync(join(root, "next.config.ts"), "utf8");
+const requiredProductMediaMigrationSnippets = [
+  "create table if not exists public.product_media",
+  "product_id uuid not null references public.products(id) on delete cascade",
+  "storage_path text not null",
+  "mime_type text not null",
+  "byte_size bigint not null",
+  "sort_order smallint not null",
+  "product_media_mime_type_check",
+  "product_media_sort_order_check",
+  "product_media_product_sort_order_key",
+  "product-media",
+  "file_size_limit",
+  "allowed_mime_types",
+  "product_media_owner",
+  "product_media_published",
+  "product_media_storage_owner",
+  "product_media_identity_immutable",
+  "get_published_product_media_for_catalog",
+  "remove_product_media",
+  "restore_product_media",
+  "published_product_requires_media",
+  "storage.objects",
+];
+if (
+  requiredProductMediaMigrationSnippets.some(
+    (snippet) => !productMediaMigration.includes(snippet),
+  ) ||
+  /public\s*=\s*true/i.test(productMediaMigration)
+) {
+  console.error("Foundation smoke check failed. Product media storage boundary is incomplete.");
+  process.exit(1);
+}
+if (
+  !nextConfigSource.includes('bodySizeLimit: "64mb"') ||
+  productMediaMigration.includes('create policy "product_media_published_select"') ||
+  productMediaMigration.includes('create policy "product_media_owner_update"')
+) {
+  console.error("Foundation smoke check failed. Product media request or database exposure limits are incomplete.");
+  process.exit(1);
+}
+
+const mediaFeatureFiles = [
+  "src/features/product/media-actions.ts",
+  "src/features/product/media-queries.ts",
+  "src/features/product/media-schema.ts",
+  "src/features/product/product-media-manager.tsx",
+];
+const mediaFeatureSource = mediaFeatureFiles
+  .map((filePath) => readFileSync(join(root, filePath), "utf8"))
+  .join("\n");
+if (
+  mediaFeatureSource.includes("createSupabaseServiceRoleClient") ||
+  mediaFeatureSource.includes("service-role") ||
+  mediaFeatureSource.includes('formData.get("seller_id")') ||
+  mediaFeatureSource.includes('formData.get("store_id")') ||
+  mediaFeatureSource.includes('formData.get("storage_path")') ||
+  !mediaFeatureSource.includes('"image/jpeg"') ||
+  !mediaFeatureSource.includes('"image/png"') ||
+  !mediaFeatureSource.includes('"image/webp"') ||
+  !mediaFeatureSource.includes("PRODUCT_MEDIA_MAX_COUNT = 10") ||
+  !mediaFeatureSource.includes("PRODUCT_MEDIA_MAX_BYTES = 6 * 1024 * 1024") ||
+  !mediaFeatureSource.includes("validateProductMediaSignature") ||
+  !mediaFeatureSource.includes("normalizeProductMediaOrder") ||
+  !mediaFeatureSource.includes("canRemoveProductMedia") ||
+  !mediaFeatureSource.includes("createSignedUrl") ||
+  !mediaFeatureSource.includes("useActionState") ||
+  !mediaFeatureSource.includes("aria-label")
+) {
+  console.error("Foundation smoke check failed. Product media validation or privilege boundaries are incomplete.");
+  process.exit(1);
+}
+
+const validJpeg = new File(
+  [new Uint8Array([0xff, 0xd8, 0xff, 0x00])],
+  "valid.jpg",
+  { type: "image/jpeg" },
+);
+const invalidType = new File([new Uint8Array([0x00])], "invalid.gif", {
+  type: "image/gif",
+});
+const oversizedImage = new File(
+  [new Uint8Array(6 * 1024 * 1024 + 1)],
+  "large.jpg",
+  { type: "image/jpeg" },
+);
+const validFileResult = validateProductMediaFile(validJpeg);
+const invalidTypeResult = validateProductMediaFile(invalidType);
+const oversizedResult = validateProductMediaFile(oversizedImage);
+const validSignatureResult = await validateProductMediaSignature(validJpeg, "image/jpeg");
+const invalidSignatureResult = await validateProductMediaSignature(invalidType, "image/jpeg");
+const normalizedOrder = normalizeProductMediaOrder(
+  ["cover", "second", "third"],
+  ["third", "cover", "second"],
+);
+if (
+  !validFileResult.isValid ||
+  invalidTypeResult.isValid ||
+  oversizedResult.isValid ||
+  !validSignatureResult.isValid ||
+  invalidSignatureResult.isValid ||
+  !normalizedOrder ||
+  normalizedOrder[0]?.sortOrder !== 0 ||
+  normalizedOrder[2]?.id !== "second" ||
+  normalizeProductMediaOrder(["cover", "second"], ["cover", "cover"]) ||
+  canRemoveProductMedia("published", 1) ||
+  !canRemoveProductMedia("published", 2) ||
+  !canRemoveProductMedia("draft", 0)
+) {
+  console.error("Foundation smoke check failed. Product media invariants are not executable.");
+  process.exit(1);
+}
+
+const publicCatalogMediaSource = readFileSync(
+  join(root, "src/features/store/public-catalog.ts"),
+  "utf8",
+);
+if (
+  !publicCatalogMediaSource.includes("media") ||
+  !publicCatalogMediaSource.includes("getPublishedProductMediaForCatalog") ||
+  publicCatalogMediaSource.includes("storage_path") ||
+  publicCatalogMediaSource.includes("createSupabaseServiceRoleClient")
+) {
+  console.error("Foundation smoke check failed. Public catalog media boundary is incomplete.");
   process.exit(1);
 }
 

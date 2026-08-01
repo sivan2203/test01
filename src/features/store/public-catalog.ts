@@ -1,6 +1,10 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  getPublishedProductMediaForCatalog,
+} from "@/features/product/media-queries";
+import type { ProductMedia } from "@/features/product/media-schema";
 
 export type PublicCatalogItem = {
   id: string;
@@ -9,6 +13,7 @@ export type PublicCatalogItem = {
   priceAmount: number | null;
   availabilityStatus: "in_stock" | "out_of_stock";
   status: "published";
+  media: ProductMedia[];
 };
 
 type PublicCatalogRow = {
@@ -24,7 +29,10 @@ export type PublicCatalogResult =
   | { status: "found"; items: PublicCatalogItem[] }
   | { status: "error" };
 
-function mapPublicCatalogRow(row: PublicCatalogRow): PublicCatalogItem {
+function mapPublicCatalogRow(
+  row: PublicCatalogRow,
+  media: ProductMedia[],
+): PublicCatalogItem {
   return {
     id: row.id,
     title: row.title,
@@ -32,6 +40,7 @@ function mapPublicCatalogRow(row: PublicCatalogRow): PublicCatalogItem {
     priceAmount: row.price_amount,
     availabilityStatus: row.availability_status,
     status: "published",
+    media,
   };
 }
 
@@ -49,10 +58,16 @@ export async function getPublicCatalogItemsForStore(
     }
 
     const rows = Array.isArray(data) ? data : [];
+    const mediaByProduct = await getPublishedProductMediaForCatalog(
+      supabase,
+      rows.map((row) => row.id),
+    );
 
     return {
       status: "found",
-      items: rows.map(mapPublicCatalogRow),
+      items: rows.map((row) =>
+        mapPublicCatalogRow(row, mediaByProduct.get(row.id) ?? []),
+      ),
     };
   } catch {
     return { status: "error" };

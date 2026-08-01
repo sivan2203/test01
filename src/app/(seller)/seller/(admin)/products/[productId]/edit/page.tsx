@@ -2,7 +2,9 @@ import { notFound, redirect } from "next/navigation";
 
 import { GlassPanel } from "@/components/design-system";
 import { getInitialProductDraftFormState } from "@/features/product/form-state";
+import { ProductMediaManager } from "@/features/product/product-media-manager";
 import { ProductForm } from "@/features/product/product-form";
+import { getSellerProductMedia } from "@/features/product/media-queries";
 import { getSellerProductDraftById } from "@/features/product/queries";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +47,13 @@ export default async function EditProductDraftPage({
     );
   }
 
+  const mediaResult = await getSellerProductMedia(productResult.product.id);
+  const initialMedia = mediaResult.status === "found" ? mediaResult.media : [];
+  const mediaError =
+    mediaResult.status !== "found"
+      ? "Не удалось загрузить фотографии. Обновите страницу и попробуйте ещё раз."
+      : undefined;
+
   return (
     <main className="flex flex-col gap-4">
       <GlassPanel className="p-5">
@@ -60,6 +69,16 @@ export default async function EditProductDraftPage({
         <ProductForm
           initialState={getInitialProductDraftFormState(productResult.product)}
           productId={productResult.product.id}
+        />
+      </GlassPanel>
+
+      <GlassPanel className="p-5">
+        <ProductMediaManager
+          initialError={mediaError}
+          initialMedia={initialMedia}
+          productId={productResult.product.id}
+          productStatus={productResult.product.status}
+          productTitle={productResult.product.title}
         />
       </GlassPanel>
     </main>
