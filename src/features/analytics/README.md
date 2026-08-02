@@ -16,4 +16,13 @@ handoff Route Handlers. The cookie is `HttpOnly`, `SameSite=Lax`, `Path=/`, secu
 production, and contains no identity. The Supabase RPCs re-query the public
 store/product boundary and are the only ledger write path. The RPCs are internal-only
 and invoked by the isolated server-side service-role writer; raw rows remain canonical
-and seller-facing summaries belong to later Epic 4 stories.
+and seller-facing summaries derive from the raw ledger.
+
+Story 4.3 adds the seller home summary through `get_seller_home_analytics_summary()`.
+The read is authenticated and seller-scoped inside a `security definer` RPC because
+the raw ledger remains unavailable to ordinary authenticated table reads. The RPC
+returns only today's aggregate counts, the store-local UTC window, and top source
+ranked by eligible public `store_view` count. It filters `excluded_reason is null`,
+uses the store's IANA timezone with `Europe/Moscow` fallback, and never returns raw
+events, referrers, campaign metadata, or buyer identity. The seller page uses the
+SSR user client and must not import the service-role client.
