@@ -156,12 +156,20 @@ export default async function SellerProductsPage({
             <p className="text-sm text-foreground/60">Товары</p>
             <h1 className="mt-2 text-2xl font-semibold">Товары</h1>
           </div>
-          <Link
-            className={cn(buttonVariants({ size: "compact" }), "shrink-0")}
-            href="/seller/products/new"
-          >
-            Добавить
-          </Link>
+          <div className="flex shrink-0 gap-2">
+            <Link
+              className={cn(buttonVariants({ variant: "secondary", size: "compact" }))}
+              href="/seller/products/import"
+            >
+              Импорт
+            </Link>
+            <Link
+              className={cn(buttonVariants({ size: "compact" }))}
+              href="/seller/products/new"
+            >
+              Добавить
+            </Link>
+          </div>
         </div>
         <p className="mt-3 text-sm leading-6 text-foreground/70">
           Находите товары по статусу, открывайте редактор и продолжайте работу с телефона.

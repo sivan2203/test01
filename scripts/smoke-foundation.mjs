@@ -999,7 +999,7 @@ if (
   process.exit(1);
 }
 if (
-  !nextConfigSource.includes('bodySizeLimit: "64mb"') ||
+  !nextConfigSource.includes('bodySizeLimit: "7mb"') ||
   productMediaMigration.includes('create policy "product_media_published_select"') ||
   productMediaMigration.includes('create policy "product_media_owner_update"')
 ) {
