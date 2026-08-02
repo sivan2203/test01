@@ -10,11 +10,15 @@ import { PublicProductGallery } from "./public-product-gallery";
 type PublicProductDetailProps = {
   product: PublicProduct;
   storeSlug: string;
+  contactConfigured: boolean;
+  isPreview?: boolean;
 };
 
 export function PublicProductDetail({
   product,
   storeSlug,
+  contactConfigured,
+  isPreview = false,
 }: PublicProductDetailProps) {
   const availabilityLabel =
     product.availabilityStatus === "out_of_stock"
@@ -64,6 +68,8 @@ export function PublicProductDetail({
           <div className="sticky bottom-4 z-10 rounded-2xl border border-border bg-glass p-2 shadow-sm backdrop-blur-xl motion-reduce:backdrop-blur-none forced-colors:bg-[Canvas]">
             <PublicProductContactCta
               className="w-full"
+              contactConfigured={contactConfigured}
+              isPreview={isPreview}
               productId={product.id}
               storeSlug={storeSlug}
             />

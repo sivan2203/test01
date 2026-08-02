@@ -18,6 +18,7 @@ const STORE_SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export type StoreProfileValues = {
   name: string;
   slug: string;
+  telegramUsername: string;
   description: string;
   additionalInfo: string;
 };
@@ -115,6 +116,7 @@ export function validateStoreProfileValues(values: StoreProfileValues) {
     values: {
       name,
       slug: slugValidation.slug,
+      telegramUsername: values.telegramUsername,
       description: values.description.trim(),
       additionalInfo: values.additionalInfo.trim(),
     },

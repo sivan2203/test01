@@ -8,6 +8,7 @@ import { getProductPriceLabel } from "@/features/product/schema";
 import { cn } from "@/lib/utils";
 import type { ProductMedia } from "@/features/product/media-schema";
 import type { PublicCatalogItem } from "./public-catalog";
+import { PublicProductContactCta } from "./public-contact-cta";
 import { PublicStorefrontImage } from "./public-storefront-image";
 
 export const PUBLIC_CATALOG_VIEW_STORAGE_KEY =
@@ -47,50 +48,29 @@ export function getDefaultCatalogView(
 export function getPublicProductDetailHref(
   storeSlug: string,
   productId: string,
+  isPreview = false,
 ) {
-  return `/${encodeURIComponent(storeSlug)}/products/${encodeURIComponent(productId)}`;
-}
-
-type PublicProductContactCtaProps = {
-  storeSlug: string;
-  productId: string;
-  contactConfigured?: boolean;
-};
-
-function PublicProductContactCta({
-  storeSlug,
-  productId,
-  contactConfigured = false,
-}: PublicProductContactCtaProps) {
-  return (
-    <Button
-      aria-label={
-        contactConfigured
-          ? "Связаться с продавцом"
-          : "Контакт продавца пока не настроен"
-      }
-      className="w-full"
-      data-contact-product-id={productId}
-      data-contact-store-slug={storeSlug}
-      disabled={!contactConfigured}
-      variant={contactConfigured ? "telegram" : "secondary"}
-    >
-      {contactConfigured
-        ? "Связаться в Telegram"
-        : "Контакт продавца пока не настроен"}
-    </Button>
-  );
+  const href = `/${encodeURIComponent(storeSlug)}/products/${encodeURIComponent(productId)}`;
+  return isPreview ? `${href}?preview=1` : href;
 }
 
 type PublicProductCardProps = {
   item: PublicCatalogItem;
   storeSlug: string;
+  contactConfigured: boolean;
+  isPreview: boolean;
   view: PublicCatalogViewMode;
 };
 
-function PublicProductCard({ item, storeSlug, view }: PublicProductCardProps) {
+function PublicProductCard({
+  item,
+  storeSlug,
+  contactConfigured,
+  isPreview,
+  view,
+}: PublicProductCardProps) {
   const cover = item.media.find((media: ProductMedia) => media.isCover) ?? item.media[0];
-  const detailHref = getPublicProductDetailHref(storeSlug, item.id);
+  const detailHref = getPublicProductDetailHref(storeSlug, item.id, isPreview);
   const availabilityLabel =
     item.availabilityStatus === "out_of_stock" ? "Нет в наличии" : "В наличии";
 
@@ -138,6 +118,9 @@ function PublicProductCard({ item, storeSlug, view }: PublicProductCardProps) {
         )}
       >
         <PublicProductContactCta
+          className="w-full"
+          contactConfigured={contactConfigured}
+          isPreview={isPreview}
           productId={item.id}
           storeSlug={storeSlug}
         />
@@ -149,11 +132,15 @@ function PublicProductCard({ item, storeSlug, view }: PublicProductCardProps) {
 type PublicCatalogViewProps = {
   catalogItems: PublicCatalogItem[];
   storeSlug: string;
+  contactConfigured: boolean;
+  isPreview?: boolean;
 };
 
 export function PublicCatalogView({
   catalogItems,
   storeSlug,
+  contactConfigured,
+  isPreview = false,
 }: PublicCatalogViewProps) {
   const [view, setView] = useState<PublicCatalogViewMode>(() =>
     getDefaultCatalogView(catalogItems),
@@ -229,6 +216,8 @@ export function PublicCatalogView({
       >
         {catalogItems.map((item) => (
           <PublicProductCard
+            contactConfigured={contactConfigured}
+            isPreview={isPreview}
             item={item}
             key={item.id}
             storeSlug={storeSlug}

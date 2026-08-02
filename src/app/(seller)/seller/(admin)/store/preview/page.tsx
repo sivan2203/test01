@@ -75,6 +75,7 @@ export default async function SellerStorePreviewPage() {
     slug: store.slug,
     name: store.name,
     avatarUrl: store.avatarUrl,
+    contactConfigured: Boolean(store.telegramUsername),
     description: store.description,
     additionalInfo: store.additionalInfo,
   };
@@ -82,6 +83,7 @@ export default async function SellerStorePreviewPage() {
   return (
     <PublicStorefrontShell
       catalogItems={catalogItems}
+      isPreview
       store={buyerFacingStore}
       previewIndicator={
         <span>

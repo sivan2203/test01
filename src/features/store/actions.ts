@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { validateTelegramUsername } from "@/features/contact/telegram";
 import {
   getStoreAvatarPath,
   STORE_AVATAR_BUCKET,
@@ -47,9 +48,11 @@ export async function saveStoreProfile(
   previousState: StoreProfileFormState,
   formData: FormData,
 ): Promise<StoreProfileFormState> {
+  const hasTelegramUsernameField = formData.has("telegramUsername");
   const values = {
     name: String(formData.get("name") ?? ""),
     slug: String(formData.get("slug") ?? ""),
+    telegramUsername: String(formData.get("telegramUsername") ?? ""),
     description: String(formData.get("description") ?? ""),
     additionalInfo: String(formData.get("additionalInfo") ?? ""),
   };
@@ -61,9 +64,18 @@ export async function saveStoreProfile(
     avatarFile && avatarValidation.isValid && avatarValidation.extension
       ? await validateStoreAvatarSignature(avatarFile, avatarValidation.extension)
       : { isValid: true as const };
-  const shouldRequestAvatarReselect = Boolean(
-    avatarFile && avatarValidation.isValid && avatarSignatureValidation.isValid,
-  );
+  const telegramValidation = validateTelegramUsername(values.telegramUsername);
+
+  if (!hasTelegramUsernameField) {
+    validation.fieldErrors.telegramUsername =
+      "Поле Telegram не передано. Обновите форму и попробуйте снова.";
+  }
+
+  if (!telegramValidation.isValid) {
+    validation.fieldErrors.telegramUsername = telegramValidation.error;
+  } else {
+    validation.values.telegramUsername = telegramValidation.username ?? "";
+  }
 
   if (!avatarValidation.isValid) {
     validation.fieldErrors.avatar = avatarValidation.error;
@@ -73,8 +85,13 @@ export async function saveStoreProfile(
     validation.fieldErrors.avatar = avatarSignatureValidation.error;
   }
 
+  const formIsValid = Object.keys(validation.fieldErrors).length === 0;
+  const shouldRequestAvatarReselect = Boolean(
+    avatarFile && avatarValidation.isValid && avatarSignatureValidation.isValid,
+  );
+
   if (
-    !validation.isValid ||
+    !formIsValid ||
     !avatarValidation.isValid ||
     !avatarSignatureValidation.isValid
   ) {
@@ -84,7 +101,7 @@ export async function saveStoreProfile(
       values: validation.values,
       fieldErrors: getFieldErrorsWithAvatarReselect(
         validation.fieldErrors,
-        shouldRequestAvatarReselect && !validation.isValid,
+        shouldRequestAvatarReselect && !formIsValid,
       ),
       avatarUrl: previousState.avatarUrl,
     };
@@ -199,6 +216,7 @@ export async function saveStoreProfile(
           seller_id: user.id,
           name: validation.values.name,
           slug: validation.values.slug || null,
+          telegram_username: validation.values.telegramUsername || null,
           avatar_path: avatarPath,
           description: normalizeOptionalStoreText(validation.values.description),
           additional_info: normalizeOptionalStoreText(validation.values.additionalInfo),
@@ -206,8 +224,11 @@ export async function saveStoreProfile(
         },
         { onConflict: "seller_id" },
       )
-      .select("avatar_path")
-      .single<{ avatar_path: string | null }>();
+      .select("avatar_path, telegram_username")
+      .single<{
+        avatar_path: string | null;
+        telegram_username: string | null;
+      }>();
 
     if (saveError) {
       if (uploadedAvatarPath) {

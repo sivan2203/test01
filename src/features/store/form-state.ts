@@ -21,6 +21,7 @@ export function getInitialStoreProfileFormState(
     values: {
       name: store?.name ?? "",
       slug: store?.slug ?? "",
+      telegramUsername: store?.telegramUsername ?? "",
       description: store?.description ?? "",
       additionalInfo: store?.additionalInfo ?? "",
     },

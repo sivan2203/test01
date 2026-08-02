@@ -9,6 +9,7 @@ export type BuyerFacingStoreProfile = {
   slug: string;
   name: string;
   avatarUrl?: string;
+  contactConfigured: boolean;
   description: string;
   additionalInfo: string;
 };
@@ -18,6 +19,7 @@ type PublicStorefrontShellProps = {
   previewIndicator?: ReactNode;
   returnAction?: ReactNode;
   catalogItems?: PublicCatalogItem[];
+  isPreview?: boolean;
 };
 
 export function PublicStorefrontShell({
@@ -25,6 +27,7 @@ export function PublicStorefrontShell({
   previewIndicator,
   returnAction,
   catalogItems = [],
+  isPreview = false,
 }: PublicStorefrontShellProps) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 px-4 py-6 sm:px-6">
@@ -73,7 +76,12 @@ export function PublicStorefrontShell({
           </div>
         </div>
 
-        <PublicCatalogView catalogItems={catalogItems} storeSlug={store.slug} />
+        <PublicCatalogView
+          catalogItems={catalogItems}
+          contactConfigured={store.contactConfigured}
+          isPreview={isPreview}
+          storeSlug={store.slug}
+        />
       </GlassPanel>
 
       {returnAction ? <div className="pb-2">{returnAction}</div> : null}

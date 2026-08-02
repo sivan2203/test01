@@ -23,6 +23,7 @@ import {
   matchesSellerProductListFilter,
   parseSellerProductListFilter,
 } from "../src/features/product/product-list.ts";
+import { validateTelegramUsername } from "../src/features/contact/telegram.ts";
 
 const root = process.cwd();
 const requiredPaths = [
@@ -74,6 +75,11 @@ const requiredPaths = [
   "src/features/store/queries.ts",
   "src/features/store/schema.ts",
   "src/features/store/store-profile-form.tsx",
+  "src/features/contact/README.md",
+  "src/features/contact/telegram.ts",
+  "src/features/contact/handoff.ts",
+  "src/features/analytics/cta-click.ts",
+  "src/app/api/contact/telegram/route.ts",
   "src/lib/supabase/browser.ts",
   "src/lib/supabase/server.ts",
   "src/lib/supabase/proxy.ts",
@@ -321,6 +327,78 @@ if (
   process.exit(1);
 }
 
+const telegramMigrationName = readdirSync(migrationDir).find((fileName) =>
+  fileName.endsWith("_add_store_telegram_contact.sql"),
+);
+if (!telegramMigrationName) {
+  console.error("Foundation smoke check failed. Telegram contact migration is missing.");
+  process.exit(1);
+}
+
+const telegramMigration = readFileSync(
+  join(migrationDir, telegramMigrationName),
+  "utf8",
+);
+const requiredTelegramMigrationSnippets = [
+  "add column if not exists telegram_username text",
+  "stores_telegram_username_format_check",
+  "telegram_username is null",
+  "char_length(telegram_username) between 5 and 32",
+  "telegram_username ~ '^[A-Za-z][A-Za-z0-9_]{4,31}$'",
+  "drop function if exists public.get_public_store_by_slug(text)",
+  "telegram_username text",
+  "security definer",
+  "set search_path = public",
+  "revoke all on function public.get_public_store_by_slug(text) from public",
+  "grant execute on function public.get_public_store_by_slug(text) to anon, authenticated",
+  "Rollback:",
+];
+if (
+  requiredTelegramMigrationSnippets.some(
+    (snippet) => !telegramMigration.includes(snippet),
+  ) ||
+  telegramMigration.includes("telegram api") ||
+  telegramMigration.includes("service-role")
+) {
+  console.error("Foundation smoke check failed. Telegram contact migration boundaries are incomplete.");
+  process.exit(1);
+}
+
+const analyticsMigrationName = readdirSync(migrationDir).find((fileName) =>
+  fileName.endsWith("_create_analytics_events.sql"),
+);
+if (!analyticsMigrationName) {
+  console.error("Foundation smoke check failed. Analytics event migration is missing.");
+  process.exit(1);
+}
+
+const analyticsMigration = readFileSync(
+  join(migrationDir, analyticsMigrationName),
+  "utf8",
+);
+const requiredAnalyticsMigrationSnippets = [
+  "create table if not exists public.analytics_events",
+  "event_name in ('store_view', 'product_view', 'cta_click')",
+  "source = lower(source)",
+  "occurred_at timestamptz not null",
+  "alter table public.analytics_events enable row level security",
+  "revoke all on table public.analytics_events from anon, authenticated",
+  "record_public_cta_click",
+  "products.status = 'published'",
+  "stores.telegram_username is not null",
+  "Rollback:",
+];
+if (
+  requiredAnalyticsMigrationSnippets.some(
+    (snippet) => !analyticsMigration.includes(snippet),
+  ) ||
+  analyticsMigration.includes("createSupabaseServiceRoleClient") ||
+  analyticsMigration.includes("telegram api")
+) {
+  console.error("Foundation smoke check failed. Analytics event boundaries are incomplete.");
+  process.exit(1);
+}
+
 const publicStoreAvatarMigrationName = readdirSync(migrationDir).find((fileName) =>
   fileName.endsWith("_public_store_avatar.sql"),
 );
@@ -444,6 +522,59 @@ if (
   storeFeatureSource.includes('formData.get("seller_id")')
 ) {
   console.error("Foundation smoke check failed. Store profile validation or ownership boundaries are incomplete.");
+  process.exit(1);
+}
+
+const contactFeatureSource = [
+  readFileSync(join(root, "src/features/contact/README.md"), "utf8"),
+  readFileSync(join(root, "src/features/contact/telegram.ts"), "utf8"),
+  readFileSync(join(root, "src/features/contact/handoff.ts"), "utf8"),
+  readFileSync(join(root, "src/features/analytics/cta-click.ts"), "utf8"),
+].join("\n");
+if (
+  !contactFeatureSource.includes("telegram") ||
+  !contactFeatureSource.includes("TELEGRAM_USERNAME_MIN_LENGTH") ||
+  !contactFeatureSource.includes("TELEGRAM_USERNAME_MAX_LENGTH") ||
+  !contactFeatureSource.includes("t.me") ||
+  !contactFeatureSource.includes("telegram.me") ||
+  !contactFeatureSource.includes("telegram.dog") ||
+  !contactFeatureSource.includes("buildTelegramHandoff") ||
+  !contactFeatureSource.includes("cta_click") ||
+  contactFeatureSource.includes("WhatsApp") ||
+  contactFeatureSource.includes("VK") ||
+  contactFeatureSource.includes("phone") ||
+  contactFeatureSource.includes("Telegram API")
+) {
+  console.error("Foundation smoke check failed. Contact adapter domain boundaries are incomplete.");
+  process.exit(1);
+}
+
+const validTelegramInputs = [
+  "seller_123",
+  "@seller_123",
+  "https://t.me/seller_123",
+  "https://telegram.me/seller_123/",
+  "https://telegram.dog/seller_123",
+];
+const invalidTelegramInputs = [
+  "seller 123",
+  "seller-123",
+  "https://t.me/seller_123?text=hello",
+  "https://t.me/seller_123#section",
+  "https://t.me/seller_123/extra",
+  "https://example.com/seller_123",
+  "tg://resolve?domain=seller_123",
+  "abcd",
+  `a${"b".repeat(32)}`,
+];
+if (
+  validTelegramInputs.some(
+    (input) => validateTelegramUsername(input).username !== "seller_123",
+  ) ||
+  validateTelegramUsername("").username !== null ||
+  invalidTelegramInputs.some((input) => validateTelegramUsername(input).isValid)
+) {
+  console.error("Foundation smoke check failed. Telegram input validation is incomplete.");
   process.exit(1);
 }
 
@@ -648,6 +779,10 @@ const publicContactCtaSource = readFileSync(
   join(root, "src/features/store/public-contact-cta.tsx"),
   "utf8",
 );
+const telegramRouteSource = readFileSync(
+  join(root, "src/features/contact/telegram-route.ts"),
+  "utf8",
+);
 if (
   !publicStorePageSource.includes("getPublicStoreBySlug") ||
   !publicStorePageSource.includes("getPublicCatalogItemsForStore") ||
@@ -667,6 +802,8 @@ if (
   !publicStoreQuerySource.includes("get_public_store_by_slug") ||
   !publicStoreQuerySource.includes("avatar_path") ||
   !publicStoreQuerySource.includes("avatarUrl") ||
+  !publicStoreQuerySource.includes("contactConfigured") ||
+  !publicStoreQuerySource.includes("telegramUsername") ||
   !publicStoreQuerySource.includes("createSignedUrl") ||
   !publicStoreQuerySource.includes('status: "found"') ||
   !publicStoreQuerySource.includes('status: "not_found"') ||
@@ -700,6 +837,7 @@ if (
   !previewStorePageSource.includes("getPublishedPublicCatalogItemsForStore") ||
   !previewStorePageSource.includes("buyerFacingStore") ||
   !previewStorePageSource.includes("avatarUrl") ||
+  !previewStorePageSource.includes("contactConfigured") ||
   !previewStorePageSource.includes("PublicStorefrontShell") ||
   !previewStorePageSource.includes('href="/seller/store"') ||
   !previewStorePageSource.includes("Режим предпросмотра") ||
@@ -716,6 +854,7 @@ if (
   !publicStorefrontShellSource.includes("previewIndicator") ||
   !publicStorefrontShellSource.includes("catalogItems") ||
   !publicStorefrontShellSource.includes("avatarUrl") ||
+  !publicStorefrontShellSource.includes("contactConfigured") ||
   !publicCatalogSource.includes('import "server-only"') ||
   !publicCatalogSource.includes("getPublishedPublicCatalogItemsForStore") ||
   !publicCatalogSource.includes("get_public_catalog_items_for_store") ||
@@ -747,6 +886,7 @@ if (
 
 if (
   !publicProductPageSource.includes("getPublicProductForStore") ||
+  !publicProductPageSource.includes("getPublicStoreBySlug") ||
   !publicProductPageSource.includes("PublicProductDetail") ||
   !publicProductPageSource.includes('dynamic = "force-dynamic"') ||
   !publicProductPageSource.includes("params: Promise") ||
@@ -774,7 +914,17 @@ if (
   !publicProductGallerySource.includes("Math.abs(deltaX) <= Math.abs(deltaY)") ||
   !publicContactCtaSource.includes("data-contact-product-id") ||
   !publicContactCtaSource.includes("data-contact-store-slug") ||
-  !publicContactCtaSource.includes("disabled={!contactConfigured}") ||
+  !publicContactCtaSource.includes("disabled={!contactConfigured || status === \"pending\"}") ||
+  !publicContactCtaSource.includes("Связаться в Telegram") ||
+  !publicContactCtaSource.includes("Связаться с продавцом в Telegram") ||
+  !publicContactCtaSource.includes("onClick={handleContactClick}") ||
+  !publicContactCtaSource.includes("/api/contact/telegram") ||
+  !publicContactCtaSource.includes('window.open("about:blank", "_blank")') ||
+  !publicContactCtaSource.includes("navigator.clipboard") ||
+  !publicContactCtaSource.includes("Скопировать текст сообщения") ||
+  !telegramRouteSource.includes("prepareTelegramHandoff") ||
+  !telegramRouteSource.includes("normalizeAnalyticsSessionId") ||
+  telegramRouteSource.includes("createSupabaseServiceRoleClient") ||
   publicProductPageSource.includes("createSupabaseServiceRoleClient") ||
   publicProductDetailSource.includes("recordAnalytics") ||
   publicProductGallerySource.includes("storage_path")
@@ -1091,9 +1241,9 @@ if (
   !publicCatalogViewSource.includes("flex flex-col gap-4") ||
   !publicCatalogViewSource.includes('from "next/link"') ||
   !publicCatalogViewSource.includes("getPublicProductDetailHref") ||
-  !publicCatalogViewSource.includes("data-contact-product-id") ||
-  !publicCatalogViewSource.includes("data-contact-store-slug") ||
-  !publicCatalogViewSource.includes("disabled={!contactConfigured}") ||
+  !publicCatalogViewSource.includes('from "./public-contact-cta"') ||
+  !publicCatalogViewSource.includes("<PublicProductContactCta") ||
+  !publicCatalogViewSource.includes("contactConfigured") ||
   !publicCatalogViewSource.includes("productId") ||
   !publicCatalogViewSource.includes("storeSlug") ||
   publicCatalogViewSource.includes("createSupabaseServiceRoleClient") ||

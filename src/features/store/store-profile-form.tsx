@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { validateTelegramUsername } from "@/features/contact/telegram";
 import { cn } from "@/lib/utils";
 import { saveStoreProfile } from "./actions";
 import type { StoreProfileFormState } from "./form-state";
@@ -12,10 +13,10 @@ type StoreProfileFormProps = {
   initialState: StoreProfileFormState;
 };
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id?: string; message?: string }) {
   if (!message) return null;
   return (
-    <p className="text-sm leading-6 text-foreground/75" role="alert">
+    <p className="text-sm leading-6 text-foreground/75" id={id} role="alert">
       {message}
     </p>
   );
@@ -27,6 +28,9 @@ export function StoreProfileForm({ initialState }: StoreProfileFormProps) {
     initialState,
   );
   const [slugDraft, setSlugDraft] = useState(state.values.slug);
+  const [telegramDraft, setTelegramDraft] = useState(
+    state.values.telegramUsername,
+  );
   const [slugEditedAfterSubmit, setSlugEditedAfterSubmit] = useState(false);
   const [linkStatus, setLinkStatus] = useState("");
 
@@ -48,6 +52,7 @@ export function StoreProfileForm({ initialState }: StoreProfileFormProps) {
   const hasSummary =
     state.values.name ||
     state.values.slug ||
+    state.values.telegramUsername ||
     state.values.description ||
     state.values.additionalInfo ||
     state.avatarUrl;
@@ -58,6 +63,15 @@ export function StoreProfileForm({ initialState }: StoreProfileFormProps) {
   }
 
   function submitForm(formData: FormData) {
+    const telegramValidation = validateTelegramUsername(
+      String(formData.get("telegramUsername") ?? ""),
+    );
+    if (telegramValidation.isValid) {
+      const canonicalTelegramUsername = telegramValidation.username ?? "";
+      formData.set("telegramUsername", canonicalTelegramUsername);
+      setTelegramDraft(canonicalTelegramUsername);
+    }
+
     const submittedSlug = String(formData.get("slug") ?? "")
       .trim()
       .toLowerCase();
@@ -219,6 +233,48 @@ export function StoreProfileForm({ initialState }: StoreProfileFormProps) {
       </div>
 
       <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium" htmlFor="store-telegram-username">
+          Telegram для связи
+        </label>
+        <input
+          className="min-h-11 rounded-xl border border-border bg-surface-raised px-4 text-base text-foreground outline-none transition-colors placeholder:text-foreground/40 focus:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          id="store-telegram-username"
+          name="telegramUsername"
+          type="text"
+          value={telegramDraft}
+          onChange={(event) => setTelegramDraft(event.target.value)}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          inputMode="text"
+          aria-describedby={`store-telegram-username-help${
+            state.fieldErrors.telegramUsername
+              ? " store-telegram-username-error"
+              : ""
+          }`}
+          aria-invalid={Boolean(state.fieldErrors.telegramUsername)}
+        />
+        <p
+          className="text-sm leading-6 text-foreground/60"
+          id="store-telegram-username-help"
+        >
+          Username, @username или HTTPS-ссылка на профиль Telegram. В базе
+          сохранится только canonical username. Оставьте поле пустым, чтобы
+          отключить контакт.
+        </p>
+        {!state.values.telegramUsername ? (
+          <p className="text-sm leading-6 text-foreground/75" role="status">
+            Контакт продавца пока недоступен покупателям. Настройте Telegram,
+            чтобы включить кнопку связи.
+          </p>
+        ) : null}
+        <FieldError
+          id="store-telegram-username-error"
+          message={state.fieldErrors.telegramUsername}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
         <label className="text-sm font-medium" htmlFor="store-avatar">
           Фото или аватар
         </label>
@@ -315,6 +371,11 @@ export function StoreProfileForm({ initialState }: StoreProfileFormProps) {
               {state.values.slug ? (
                 <p className="mt-1 break-all text-sm text-foreground/60">
                   /{state.values.slug}
+                </p>
+              ) : null}
+              {state.values.telegramUsername ? (
+                <p className="mt-2 text-sm text-foreground/60">
+                  Telegram: @{state.values.telegramUsername}
                 </p>
               ) : null}
               {state.values.description ? (

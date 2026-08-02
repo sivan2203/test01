@@ -6,6 +6,7 @@ type StoreRow = {
   seller_id: string;
   name: string;
   slug: string | null;
+  telegram_username: string | null;
   avatar_path: string | null;
   description: string | null;
   additional_info: string | null;
@@ -19,6 +20,7 @@ export type SellerStoreProfile = {
   sellerId: string;
   name: string;
   slug: string;
+  telegramUsername: string;
   avatarPath: string | null;
   avatarUrl?: string;
   description: string;
@@ -40,6 +42,7 @@ export function mapStoreRow(row: StoreRow): SellerStoreProfile {
     sellerId: row.seller_id,
     name: row.name,
     slug: row.slug ?? "",
+    telegramUsername: row.telegram_username ?? "",
     avatarPath: row.avatar_path,
     description: row.description ?? "",
     additionalInfo: row.additional_info ?? "",
@@ -64,7 +67,7 @@ export async function getCurrentSellerStoreProfile(): Promise<SellerStoreProfile
     const { data, error } = await supabase
       .from("stores")
       .select(
-        "id, seller_id, name, slug, avatar_path, description, additional_info, timezone, created_at, updated_at",
+        "id, seller_id, name, slug, telegram_username, avatar_path, description, additional_info, timezone, created_at, updated_at",
       )
       .eq("seller_id", user.id)
       .maybeSingle<StoreRow>();

@@ -8,6 +8,7 @@ type PublicStoreRow = {
   slug: string;
   name: string;
   avatar_path: string | null;
+  telegram_username: string | null;
   description: string | null;
   additional_info: string | null;
   timezone: string;
@@ -17,6 +18,8 @@ export type PublicStoreProfile = {
   slug: string;
   name: string;
   avatarUrl?: string;
+  contactConfigured: boolean;
+  telegramUsername?: string;
   description: string;
   additionalInfo: string;
   timezone: string;
@@ -31,6 +34,8 @@ function mapPublicStoreRow(row: PublicStoreRow): PublicStoreProfile {
   return {
     slug: row.slug,
     name: row.name,
+    contactConfigured: Boolean(row.telegram_username),
+    telegramUsername: row.telegram_username ?? undefined,
     description: row.description ?? "",
     additionalInfo: row.additional_info ?? "",
     timezone: row.timezone,
