@@ -124,6 +124,13 @@ test("calculates UTC boundaries from the store local calendar day", () => {
       endUtc: "2026-08-02T15:00:00.000Z",
     },
   );
+  assert.deepEqual(
+    getTodayUtcWindow(new Date("2026-03-08T16:00:00.000Z"), "America/New_York"),
+    {
+      startUtc: "2026-03-08T05:00:00.000Z",
+      endUtc: "2026-03-09T04:00:00.000Z",
+    },
+  );
 });
 
 test("seller summary RPC is ownership-scoped and derives from eligible ledger rows", () => {

@@ -118,9 +118,19 @@ export function rankTopSource(
   return ranked[0]?.source ?? null;
 }
 
-function getLocalDateParts(date: Date, timeZone: string) {
+export type StoreLocalDate = {
+  year: number;
+  month: number;
+  day: number;
+};
+
+export function getStoreLocalDateParts(
+  date: Date,
+  timeZone = DEFAULT_STORE_TIMEZONE,
+): StoreLocalDate {
+  const safeTimeZone = normalizeTimezone(timeZone);
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
+    timeZone: safeTimeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -166,10 +176,24 @@ function getTimezoneOffsetMs(utcMilliseconds: number, timeZone: string) {
   return localAsUtc - Math.floor(utcMilliseconds / 1000) * 1000;
 }
 
-function localMidnightToUtc(
-  dateParts: { year: number; month: number; day: number },
-  timeZone: string,
+export function shiftStoreLocalDate(dateParts: StoreLocalDate, days: number): StoreLocalDate {
+  const shifted = new Date(
+    Date.UTC(dateParts.year, dateParts.month - 1, dateParts.day),
+  );
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth() + 1,
+    day: shifted.getUTCDate(),
+  };
+}
+
+export function getStoreLocalMidnightUtc(
+  dateParts: StoreLocalDate,
+  timeZone = DEFAULT_STORE_TIMEZONE,
 ) {
+  const safeTimeZone = normalizeTimezone(timeZone);
   const localAsUtc = Date.UTC(
     dateParts.year,
     dateParts.month - 1,
@@ -178,18 +202,17 @@ function localMidnightToUtc(
   let utcMilliseconds = localAsUtc;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    utcMilliseconds = localAsUtc - getTimezoneOffsetMs(utcMilliseconds, timeZone);
+    utcMilliseconds =
+      localAsUtc - getTimezoneOffsetMs(utcMilliseconds, safeTimeZone);
   }
 
   return new Date(utcMilliseconds);
 }
 
 export function getTodayUtcWindow(now: Date, timeZone = DEFAULT_STORE_TIMEZONE) {
-  const safeTimeZone = normalizeTimezone(timeZone);
-  const today = getLocalDateParts(now, safeTimeZone);
-  const start = localMidnightToUtc(today, safeTimeZone);
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 1);
+  const today = getStoreLocalDateParts(now, timeZone);
+  const start = getStoreLocalMidnightUtc(today, timeZone);
+  const end = getStoreLocalMidnightUtc(shiftStoreLocalDate(today, 1), timeZone);
 
   return {
     startUtc: start.toISOString(),

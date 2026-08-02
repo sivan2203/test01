@@ -26,3 +26,13 @@ ranked by eligible public `store_view` count. It filters `excluded_reason is nul
 uses the store's IANA timezone with `Europe/Moscow` fallback, and never returns raw
 events, referrers, campaign metadata, or buyer identity. The seller page uses the
 SSR user client and must not import the service-role client.
+
+Story 4.4 adds product-level summaries through
+`get_seller_product_analytics_summary(target_period)`. The read keeps the same
+authenticated seller boundary and returns only non-deleted seller products with
+`product_view` and `cta_click` aggregates for `today` or `last_7_days`. It uses a
+left join so products with zero eligible events remain visible, filters every
+non-null `excluded_reason`, and derives both periods from store-local calendar
+boundaries while retaining UTC event timestamps. The analytics detail page uses
+URL period links and server rendering; it does not expose a public raw-event
+endpoint or implement the deferred 30-day period.

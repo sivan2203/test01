@@ -12,7 +12,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "smoke": "node scripts/smoke-foundation.mjs",
-    "test:contracts": "node --experimental-strip-types --test scripts/cta-click-contract.test.mjs scripts/telegram-handoff-contract.test.mjs scripts/analytics-contract.test.mjs scripts/source-attribution.test.mjs scripts/seller-analytics-contract.test.mjs",
+    "test:contracts": "node --experimental-strip-types --test scripts/cta-click-contract.test.mjs scripts/telegram-handoff-contract.test.mjs scripts/analytics-contract.test.mjs scripts/source-attribution.test.mjs scripts/seller-analytics-contract.test.mjs scripts/product-analytics-contract.test.mjs",
     "check": "npm run lint && npm run typecheck && npm run build && npm run test:contracts && npm run smoke"
   },
   "dependencies": {
