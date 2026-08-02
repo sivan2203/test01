@@ -10,8 +10,9 @@ test("server handoff re-queries public product data and records CTA before respo
   const telegramRoute = read("src/features/contact/telegram-route.ts");
   const handoff = read("src/features/contact/handoff.ts");
   const handoffService = read("src/features/contact/handoff-service.ts");
+  const ingestionServer = read("src/features/analytics/public-ingestion-server.ts");
   const migration = read(
-    "supabase/migrations/20260802110000_create_analytics_events.sql",
+    "supabase/migrations/20260802120000_complete_analytics_ingestion.sql",
   );
 
   assert.match(route, /handleTelegramHandoffRequest/);
@@ -19,15 +20,17 @@ test("server handoff re-queries public product data and records CTA before respo
   assert.match(telegramRoute, /normalizeAnalyticsSessionId/);
   assert.match(handoff, /getPublicStoreBySlug/);
   assert.match(handoff, /getPublicProductForStore/);
-  assert.match(handoff, /record_public_cta_click/);
+  assert.match(ingestionServer, /record_public_cta_click/);
+  assert.match(ingestionServer, /createSupabaseServiceRoleClient/);
   assert.match(handoff, /prepareTelegramHandoffWithDependencies/);
   assert.ok(
     handoffService.indexOf("recordCtaClick") <
       handoffService.indexOf("const handoff = buildHandoff()"),
   );
-  assert.match(migration, /create table if not exists public\.analytics_events/);
-  assert.match(migration, /event_name in \('store_view', 'product_view', 'cta_click'\)/);
+  assert.match(migration, /p_event_name not in \('store_view', 'product_view', 'cta_click'\)/);
   assert.match(migration, /grant execute on function public\.record_public_cta_click/);
+  assert.match(migration, /to service_role/);
+  assert.doesNotMatch(migration, /to anon, authenticated/);
   assert.match(migration, /products\.status = 'published'/);
   assert.match(migration, /stores\.telegram_username is not null/);
   assert.match(migration, /CTA click rate limit exceeded/);

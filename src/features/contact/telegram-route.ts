@@ -3,9 +3,10 @@ import "server-only";
 import { cookies } from "next/headers";
 
 import {
+  classifyAnalyticsUserAgent,
   normalizeAnalyticsSessionId,
   normalizeAnalyticsSource,
-} from "@/features/analytics/cta-click";
+} from "@/features/analytics/event-contract";
 import { prepareTelegramHandoff } from "@/features/contact/handoff";
 import { parseTelegramHandoffRequestBody } from "@/features/contact/telegram-request";
 
@@ -83,6 +84,7 @@ export async function handleTelegramHandoffRequest(
     origin,
     source,
     sessionId,
+    userAgentType: classifyAnalyticsUserAgent(request.headers.get("user-agent")),
     isPreview: options.isPreview,
   });
 

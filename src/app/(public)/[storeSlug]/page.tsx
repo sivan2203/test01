@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { PublicAnalyticsBeacon } from "@/features/analytics/public-analytics-beacon";
 import { getPublicCatalogItemsForStore } from "@/features/store/public-catalog";
 import { getPublicStoreBySlug } from "@/features/store/public-queries";
 import { PublicStorefrontShell } from "@/features/store/public-storefront-shell";
@@ -29,5 +30,13 @@ export default async function PublicStorePage({
     throw new Error("Public catalog unavailable.");
   }
 
-  return <PublicStorefrontShell catalogItems={catalogResult.items} store={store} />;
+  return (
+    <PublicStorefrontShell
+      analyticsBeacon={
+        <PublicAnalyticsBeacon eventName="store_view" storeSlug={store.slug} />
+      }
+      catalogItems={catalogResult.items}
+      store={store}
+    />
+  );
 }

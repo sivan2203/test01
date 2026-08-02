@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { GlassPanel } from "@/components/design-system";
@@ -12,6 +13,7 @@ type PublicProductDetailProps = {
   storeSlug: string;
   contactConfigured: boolean;
   isPreview?: boolean;
+  analyticsBeacon?: ReactNode;
 };
 
 export function PublicProductDetail({
@@ -19,6 +21,7 @@ export function PublicProductDetail({
   storeSlug,
   contactConfigured,
   isPreview = false,
+  analyticsBeacon,
 }: PublicProductDetailProps) {
   const availabilityLabel =
     product.availabilityStatus === "out_of_stock"
@@ -28,6 +31,7 @@ export function PublicProductDetail({
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-4 px-4 py-6 sm:px-6">
+      {analyticsBeacon}
       <Link
         className={cn(
           "inline-flex min-h-11 items-center self-start rounded-full px-4 text-sm font-medium text-foreground/70 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",

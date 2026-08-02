@@ -9,6 +9,7 @@ export type PrepareTelegramHandoffInput = {
   origin: string;
   source?: string | null;
   sessionId?: string | null;
+  userAgentType?: "browser" | "crawler" | "unknown";
   isPreview?: boolean;
 };
 
@@ -48,6 +49,7 @@ export type CtaClickRecordInput = {
   productId: string;
   source: string | null;
   sessionId: string | null;
+  userAgentType?: "browser" | "crawler" | "unknown";
 };
 
 export type TelegramHandoffServiceDependencies = {
@@ -56,6 +58,20 @@ export type TelegramHandoffServiceDependencies = {
   recordCtaClick: (input: CtaClickRecordInput) => Promise<void>;
   buildHandoff: (context: TelegramProductContactContext) => TelegramHandoff;
 };
+
+const CTA_ANALYTICS_TIMEOUT_MS = 1_500;
+
+async function recordCtaClickWithoutBlockingHandoff(
+  recordCtaClick: TelegramHandoffServiceDependencies["recordCtaClick"],
+  input: CtaClickRecordInput,
+) {
+  await Promise.race([
+    recordCtaClick(input),
+    new Promise<void>((resolve) => {
+      setTimeout(resolve, CTA_ANALYTICS_TIMEOUT_MS);
+    }),
+  ]).catch(() => undefined);
+}
 
 export async function prepareTelegramHandoffWithDependencies(
   input: PrepareTelegramHandoffInput,
@@ -103,12 +119,17 @@ export async function prepareTelegramHandoffWithDependencies(
       });
 
     if (!input.isPreview) {
-      await dependencies.recordCtaClick({
+      const ctaClickInput: CtaClickRecordInput = {
         storeSlug: storeResult.store.slug,
         productId: productResult.product.id,
         source: input.source ?? "unknown",
         sessionId: input.sessionId ?? null,
-      });
+      };
+      if (input.userAgentType) ctaClickInput.userAgentType = input.userAgentType;
+      await recordCtaClickWithoutBlockingHandoff(
+        dependencies.recordCtaClick,
+        ctaClickInput,
+      );
     }
 
     const handoff = buildHandoff();

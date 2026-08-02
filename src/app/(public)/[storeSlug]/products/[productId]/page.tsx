@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { PublicAnalyticsBeacon } from "@/features/analytics/public-analytics-beacon";
 import { getPublicProductForStore } from "@/features/store/public-catalog";
 import { getPublicStoreBySlug } from "@/features/store/public-queries";
 import { getCurrentSellerStoreProfile } from "@/features/store/queries";
@@ -31,6 +32,9 @@ export default async function PublicProductPage({
   if (storeResult.status === "not_found") {
     notFound();
   }
+  if (storeResult.status === "error") {
+    throw new Error("Public store lookup failed.");
+  }
 
   const sellerStore = preview === "1" ? await getCurrentSellerStoreProfile() : null;
   const authorizedPreview = sellerStore
@@ -39,9 +43,18 @@ export default async function PublicProductPage({
 
   return (
     <PublicProductDetail
+      analyticsBeacon={
+        authorizedPreview ? null : (
+          <PublicAnalyticsBeacon
+            eventName="product_view"
+            productId={productResult.product.id}
+            storeSlug={storeSlug}
+          />
+        )
+      }
       product={productResult.product}
       contactConfigured={
-        storeResult.status === "found" && storeResult.store.contactConfigured
+        storeResult.store.contactConfigured
       }
       isPreview={authorizedPreview}
       storeSlug={storeSlug}

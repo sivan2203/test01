@@ -20,6 +20,7 @@ type PublicStorefrontShellProps = {
   returnAction?: ReactNode;
   catalogItems?: PublicCatalogItem[];
   isPreview?: boolean;
+  analyticsBeacon?: ReactNode;
 };
 
 export function PublicStorefrontShell({
@@ -28,9 +29,11 @@ export function PublicStorefrontShell({
   returnAction,
   catalogItems = [],
   isPreview = false,
+  analyticsBeacon,
 }: PublicStorefrontShellProps) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 px-4 py-6 sm:px-6">
+      {analyticsBeacon}
       {previewIndicator ? (
         <div className="rounded-full border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-foreground shadow-sm">
           {previewIndicator}

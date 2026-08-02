@@ -14,7 +14,7 @@ The MVP deployment envelope is Vercel + hosted Supabase.
 - Real secrets live in provider environment variables.
 - Do not commit `.env.local`, production env files, or Supabase service role keys.
 - Browser code may use only `NEXT_PUBLIC_*` Supabase public values.
-- `SUPABASE_SERVICE_ROLE_KEY` is server-only and restricted to isolated maintenance/admin modules.
+- `SUPABASE_SERVICE_ROLE_KEY` is server-only and restricted to isolated maintenance/admin modules and the analytics ingestion writer; it must never be imported by client components or used for ordinary seller reads/writes.
 
 ## Promotion Guardrail
 
