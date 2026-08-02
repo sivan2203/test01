@@ -4,6 +4,10 @@ import {
   normalizeAnalyticsSource,
   normalizeAnalyticsSessionId,
 } from "./event-contract.ts";
+import {
+  MAX_REFERRER_HINT_LENGTH,
+  MAX_SOURCE_HINT_LENGTH,
+} from "./source-attribution.ts";
 
 const PUBLIC_VIEW_EVENT_NAMES = ["store_view", "product_view"] as const;
 type PublicViewEventName = (typeof PUBLIC_VIEW_EVENT_NAMES)[number];
@@ -26,6 +30,8 @@ export type PublicAnalyticsPayload = {
   storeSlug: string;
   productId: string | null;
   source: string | null;
+  utmSource?: string | null;
+  referrer?: string | null;
 };
 
 export type PublicAnalyticsIngestionInput = PublicAnalyticsPayload & {
@@ -75,6 +81,8 @@ export function parsePublicAnalyticsPayload(
   const storeSlug = body.storeSlug;
   const productId = body.productId;
   const source = body.source;
+  const utmSource = body.utmSource;
+  const referrer = body.referrer;
 
   if (
     !PUBLIC_VIEW_EVENT_NAMES.includes(eventName as PublicViewEventName) ||
@@ -86,6 +94,25 @@ export function parsePublicAnalyticsPayload(
   if (source !== undefined && source !== null && typeof source !== "string") {
     return null;
   }
+  if (
+    (utmSource !== undefined && utmSource !== null && typeof utmSource !== "string") ||
+    (referrer !== undefined && referrer !== null && typeof referrer !== "string")
+  ) {
+    return null;
+  }
+
+  const boundedSource =
+    typeof source === "string" && source.length > MAX_SOURCE_HINT_LENGTH
+      ? null
+      : source;
+  const boundedUtmSource =
+    typeof utmSource === "string" && utmSource.length > MAX_SOURCE_HINT_LENGTH
+      ? null
+      : utmSource;
+  const boundedReferrer =
+    typeof referrer === "string" && referrer.length > MAX_REFERRER_HINT_LENGTH
+      ? null
+      : referrer;
 
   if (parsedEventName === "store_view") {
     if (productId !== undefined && productId !== null) return null;
@@ -93,7 +120,9 @@ export function parsePublicAnalyticsPayload(
       eventName: parsedEventName,
       storeSlug,
       productId: null,
-      source: source === undefined ? null : source,
+      source: boundedSource === undefined ? null : boundedSource,
+      utmSource: boundedUtmSource === undefined ? null : boundedUtmSource,
+      referrer: boundedReferrer === undefined ? null : boundedReferrer,
     };
   }
 
@@ -102,7 +131,9 @@ export function parsePublicAnalyticsPayload(
     eventName: parsedEventName,
     storeSlug,
     productId,
-    source: source === undefined ? null : source,
+    source: boundedSource === undefined ? null : boundedSource,
+    utmSource: boundedUtmSource === undefined ? null : boundedUtmSource,
+    referrer: boundedReferrer === undefined ? null : boundedReferrer,
   };
 }
 

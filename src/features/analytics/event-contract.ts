@@ -1,3 +1,9 @@
+import {
+  SOURCE_KEY_PATTERN,
+  UNKNOWN_SOURCE,
+  normalizeSourceKey,
+} from "./source-attribution.ts";
+
 export const ANALYTICS_EVENT_NAMES = [
   "store_view",
   "product_view",
@@ -14,8 +20,8 @@ export type AnalyticsExclusionReason =
   | "disabled_contact"
   | "rate_limited";
 
-export const UNKNOWN_ANALYTICS_SOURCE = "unknown" as const;
-export const ANALYTICS_SOURCE_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+export const UNKNOWN_ANALYTICS_SOURCE = UNKNOWN_SOURCE;
+export const ANALYTICS_SOURCE_PATTERN = SOURCE_KEY_PATTERN;
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -53,10 +59,7 @@ export function isAnalyticsUuid(value: string) {
 }
 
 export function normalizeAnalyticsSource(source?: string | null) {
-  const normalized = source?.trim().toLowerCase() ?? "";
-  return ANALYTICS_SOURCE_PATTERN.test(normalized)
-    ? normalized
-    : UNKNOWN_ANALYTICS_SOURCE;
+  return normalizeSourceKey(source) ?? UNKNOWN_ANALYTICS_SOURCE;
 }
 
 export function normalizeAnalyticsSessionId(sessionId?: string | null) {

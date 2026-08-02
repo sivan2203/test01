@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+import { getPublicAttributionHints } from "./source-attribution";
+
 type PublicAnalyticsBeaconProps = {
   eventName: "store_view" | "product_view";
   storeSlug: string;
@@ -18,9 +20,18 @@ export function PublicAnalyticsBeacon({
   useEffect(() => {
     if (sentRef.current) return;
     sentRef.current = true;
+    const attributionHints = getPublicAttributionHints(
+      new URL(window.location.href),
+      document.referrer,
+    );
 
     void fetch("/api/analytics", {
-      body: JSON.stringify({ eventName, storeSlug, productId }),
+      body: JSON.stringify({
+        eventName,
+        storeSlug,
+        productId,
+        ...attributionHints,
+      }),
       credentials: "same-origin",
       headers: { "content-type": "application/json" },
       keepalive: true,
@@ -32,4 +43,3 @@ export function PublicAnalyticsBeacon({
 
   return null;
 }
-

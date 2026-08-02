@@ -11,6 +11,7 @@ import {
   normalizeAnalyticsSessionId,
 } from "../src/features/analytics/event-contract.ts";
 import { prepareTelegramHandoffWithDependencies } from "../src/features/contact/handoff-service.ts";
+import { parseTelegramHandoffRequestBody } from "../src/features/contact/telegram-request.ts";
 import {
   parsePublicAnalyticsPayload,
   recordPublicAnalyticsEventWithDependencies,
@@ -99,7 +100,14 @@ test("parses only the public view payload and ignores preview opt-out fields", (
       productId,
       isPreview: true,
     }),
-    { eventName: "product_view", storeSlug: "lamp-shop", productId, source: null },
+    {
+      eventName: "product_view",
+      storeSlug: "lamp-shop",
+      productId,
+      source: null,
+      utmSource: null,
+      referrer: null,
+    },
   );
   assert.equal(parsePublicAnalyticsPayload(null), null);
   assert.equal(parsePublicAnalyticsPayload([]), null);
@@ -107,6 +115,31 @@ test("parses only the public view payload and ignores preview opt-out fields", (
   assert.equal(parsePublicAnalyticsPayload({ eventName: "store_view", storeSlug: "api" }), null);
   assert.equal(
     parsePublicAnalyticsPayload({ eventName: "product_view", storeSlug: "lamp-shop" }),
+    null,
+  );
+  assert.deepEqual(
+    parsePublicAnalyticsPayload({
+      eventName: "store_view",
+      storeSlug: "lamp-shop",
+      source: "Instagram",
+      utmSource: "telegram",
+      referrer: "https://t.me/seller?start=private",
+    }),
+    {
+      eventName: "store_view",
+      storeSlug: "lamp-shop",
+      productId: null,
+      source: "Instagram",
+      utmSource: "telegram",
+      referrer: "https://t.me/seller?start=private",
+    },
+  );
+  assert.equal(
+    parsePublicAnalyticsPayload({
+      eventName: "store_view",
+      storeSlug: "lamp-shop",
+      referrer: { raw: "https://evil.example" },
+    }),
     null,
   );
 });
@@ -177,14 +210,19 @@ test("maps views to server-owned RPCs and makes boundary failures observable", a
 
 test("keeps the public route and migration inside the intended security boundary", () => {
   const route = readFileSync("src/app/api/analytics/route.ts", "utf8");
+  const session = readFileSync(
+    "src/features/analytics/buyer-session-server.ts",
+    "utf8",
+  );
   const migration = readFileSync(
     "supabase/migrations/20260802120000_complete_analytics_ingestion.sql",
     "utf8",
   );
 
   assert.match(route, /await cookies\(\)/);
-  assert.match(route, /buyer_session_id/);
-  assert.match(route, /crypto\.randomUUID/);
+  assert.match(route, /ensureBuyerSession/);
+  assert.match(session, /buyer_session_id/);
+  assert.match(session, /crypto\.randomUUID/);
   assert.doesNotMatch(route, /isPreview/);
   assert.match(migration, /alter table public\.analytics_events enable row level security/);
   assert.match(migration, /revoke all on table public\.analytics_events from anon, authenticated/);
@@ -228,9 +266,69 @@ test("mounts one beacon only on successful public buyer boundaries", () => {
   assert.doesNotMatch(previewPage, /PublicAnalyticsBeacon|\/api\/analytics/);
   assert.match(beacon, /useRef\(false\)/);
   assert.match(beacon, /fetch\("\/api\/analytics"/);
+  assert.match(beacon, /getPublicAttributionHints/);
   assert.match(beacon, /\.catch\(\(\) =>/);
   assert.doesNotMatch(beacon, /createSupabaseServiceRoleClient|service-role/);
   assert.match(cta, /disabled=\{!contactConfigured/);
+  assert.match(cta, /getPublicAttributionHints/);
+});
+
+test("keeps source resolution server-owned and does not persist raw referrers", () => {
+  const analyticsRoute = readFileSync("src/app/api/analytics/route.ts", "utf8");
+  const telegramRoute = readFileSync("src/features/contact/telegram-route.ts", "utf8");
+  const catalogView = readFileSync(
+    "src/features/store/public-catalog-view.tsx",
+    "utf8",
+  );
+  const serverHelper = readFileSync(
+    "src/features/analytics/source-attribution-server.ts",
+    "utf8",
+  );
+
+  assert.match(analyticsRoute, /resolveRequestSource/);
+  assert.match(analyticsRoute, /persistSourceAttribution/);
+  assert.match(telegramRoute, /resolveRequestSource/);
+  assert.match(telegramRoute, /persistSourceAttribution/);
+  assert.match(analyticsRoute, /ensureBuyerSession/);
+  assert.match(telegramRoute, /ensureBuyerSession/);
+  assert.match(analyticsRoute, /shouldPersistResolvedSource/);
+  assert.match(telegramRoute, /shouldPersistResolvedSource/);
+  assert.match(catalogView, /attributionQuery/);
+  assert.match(serverHelper, /httpOnly: true/);
+  assert.match(serverHelper, /sameSite: "lax"/);
+  assert.match(serverHelper, /path: "\/"/);
+  assert.match(serverHelper, /SOURCE_ATTRIBUTION_COOKIE/);
+  assert.doesNotMatch(serverHelper, /buyer_session_id/);
+  assert.doesNotMatch(analyticsRoute, /getSourceFromReferer/);
+  assert.doesNotMatch(telegramRoute, /getSourceFromReferer/);
+});
+
+test("accepts optional transient Telegram hints without trusting their types", () => {
+  assert.deepEqual(
+    parseTelegramHandoffRequestBody({
+      storeSlug: "lamp-shop",
+      productId,
+      source: "Telegram",
+      utmSource: "telegram",
+      referrer: "https://t.me/seller?start=private",
+    }),
+    {
+      storeSlug: "lamp-shop",
+      productId,
+      source: "Telegram",
+      utmSource: "telegram",
+      referrer: "https://t.me/seller?start=private",
+    },
+  );
+  assert.deepEqual(
+    parseTelegramHandoffRequestBody({
+      storeSlug: "lamp-shop",
+      productId,
+      source: { raw: "https://evil.example" },
+      referrer: ["https://evil.example"],
+    }),
+    { storeSlug: "lamp-shop", productId },
+  );
 });
 
 test("keeps Telegram handoff usable when CTA analytics rejects", async () => {

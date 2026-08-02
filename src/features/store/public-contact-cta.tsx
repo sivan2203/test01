@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { getPublicAttributionHints } from "@/features/analytics/source-attribution";
 
 type PublicProductContactCtaProps = {
   storeSlug: string;
@@ -40,7 +41,16 @@ export function PublicProductContactCta({
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ storeSlug, productId }),
+          body: JSON.stringify({
+            storeSlug,
+            productId,
+            ...(isPreview
+              ? {}
+              : getPublicAttributionHints(
+                  new URL(window.location.href),
+                  document.referrer,
+                )),
+          }),
           signal: controller.signal,
         },
       );

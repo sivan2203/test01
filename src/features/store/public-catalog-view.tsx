@@ -10,11 +10,18 @@ import type { ProductMedia } from "@/features/product/media-schema";
 import type { PublicCatalogItem } from "./public-catalog";
 import { PublicProductContactCta } from "./public-contact-cta";
 import { PublicStorefrontImage } from "./public-storefront-image";
+import {
+  getPublicProductDetailHref,
+  type PublicAttributionQuery,
+} from "./public-attribution-links";
 
 export const PUBLIC_CATALOG_VIEW_STORAGE_KEY =
   "personal-storefront:catalog-view:v1";
 
 export type PublicCatalogViewMode = "grid" | "list";
+
+export { getPublicProductDetailHref } from "./public-attribution-links";
+export type { PublicAttributionQuery } from "./public-attribution-links";
 
 type StorageReader = Pick<Storage, "getItem">;
 
@@ -45,20 +52,12 @@ export function getDefaultCatalogView(
   return items.some((item) => item.media.length > 0) ? "grid" : "list";
 }
 
-export function getPublicProductDetailHref(
-  storeSlug: string,
-  productId: string,
-  isPreview = false,
-) {
-  const href = `/${encodeURIComponent(storeSlug)}/products/${encodeURIComponent(productId)}`;
-  return isPreview ? `${href}?preview=1` : href;
-}
-
 type PublicProductCardProps = {
   item: PublicCatalogItem;
   storeSlug: string;
   contactConfigured: boolean;
   isPreview: boolean;
+  attributionQuery?: PublicAttributionQuery;
   view: PublicCatalogViewMode;
 };
 
@@ -67,10 +66,16 @@ function PublicProductCard({
   storeSlug,
   contactConfigured,
   isPreview,
+  attributionQuery,
   view,
 }: PublicProductCardProps) {
   const cover = item.media.find((media: ProductMedia) => media.isCover) ?? item.media[0];
-  const detailHref = getPublicProductDetailHref(storeSlug, item.id, isPreview);
+  const detailHref = getPublicProductDetailHref(
+    storeSlug,
+    item.id,
+    isPreview,
+    attributionQuery,
+  );
   const availabilityLabel =
     item.availabilityStatus === "out_of_stock" ? "Нет в наличии" : "В наличии";
 
@@ -134,6 +139,7 @@ type PublicCatalogViewProps = {
   storeSlug: string;
   contactConfigured: boolean;
   isPreview?: boolean;
+  attributionQuery?: PublicAttributionQuery;
 };
 
 export function PublicCatalogView({
@@ -141,6 +147,7 @@ export function PublicCatalogView({
   storeSlug,
   contactConfigured,
   isPreview = false,
+  attributionQuery,
 }: PublicCatalogViewProps) {
   const [view, setView] = useState<PublicCatalogViewMode>(() =>
     getDefaultCatalogView(catalogItems),
@@ -221,6 +228,7 @@ export function PublicCatalogView({
             item={item}
             key={item.id}
             storeSlug={storeSlug}
+            attributionQuery={attributionQuery}
             view={view}
           />
         ))}

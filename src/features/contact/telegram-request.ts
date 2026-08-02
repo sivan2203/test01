@@ -1,7 +1,14 @@
+import {
+  MAX_REFERRER_HINT_LENGTH,
+  MAX_SOURCE_HINT_LENGTH,
+} from "../analytics/source-attribution.ts";
+
 export type TelegramHandoffRequestBody = {
   storeSlug: string;
   productId: string;
   source?: string;
+  utmSource?: string;
+  referrer?: string;
 };
 
 export function parseTelegramHandoffRequestBody(
@@ -21,9 +28,31 @@ export function parseTelegramHandoffRequestBody(
     return null;
   }
 
+  const source =
+    typeof record.source === "string" &&
+    record.source.length <= MAX_SOURCE_HINT_LENGTH
+      ? record.source
+      : undefined;
+  const utmSource =
+    typeof record.utmSource === "string" &&
+    record.utmSource.length <= MAX_SOURCE_HINT_LENGTH
+      ? record.utmSource
+      : undefined;
+  const referrer =
+    typeof record.referrer === "string" &&
+    record.referrer.length <= MAX_REFERRER_HINT_LENGTH
+      ? record.referrer
+      : undefined;
+
+  const hints = {
+    ...(source !== undefined ? { source } : {}),
+    ...(utmSource !== undefined ? { utmSource } : {}),
+    ...(referrer !== undefined ? { referrer } : {}),
+  };
+
   return {
     storeSlug: record.storeSlug,
     productId: record.productId,
-    source: typeof record.source === "string" ? record.source : undefined,
+    ...hints,
   };
 }

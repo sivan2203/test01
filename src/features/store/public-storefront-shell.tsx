@@ -2,7 +2,10 @@ import type { ReactNode } from "react";
 
 import { GlassPanel } from "@/components/design-system";
 import type { PublicCatalogItem } from "./public-catalog";
-import { PublicCatalogView } from "./public-catalog-view";
+import {
+  PublicCatalogView,
+  type PublicAttributionQuery,
+} from "./public-catalog-view";
 import { PublicStorefrontImage } from "./public-storefront-image";
 
 export type BuyerFacingStoreProfile = {
@@ -21,6 +24,7 @@ type PublicStorefrontShellProps = {
   catalogItems?: PublicCatalogItem[];
   isPreview?: boolean;
   analyticsBeacon?: ReactNode;
+  attributionQuery?: PublicAttributionQuery;
 };
 
 export function PublicStorefrontShell({
@@ -30,6 +34,7 @@ export function PublicStorefrontShell({
   catalogItems = [],
   isPreview = false,
   analyticsBeacon,
+  attributionQuery,
 }: PublicStorefrontShellProps) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 px-4 py-6 sm:px-6">
@@ -84,6 +89,7 @@ export function PublicStorefrontShell({
           contactConfigured={store.contactConfigured}
           isPreview={isPreview}
           storeSlug={store.slug}
+          attributionQuery={attributionQuery}
         />
       </GlassPanel>
 

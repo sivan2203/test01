@@ -5,8 +5,17 @@ import { cookies } from "next/headers";
 import {
   classifyAnalyticsUserAgent,
   normalizeAnalyticsSessionId,
-  normalizeAnalyticsSource,
 } from "@/features/analytics/event-contract";
+import {
+  MAX_ATTRIBUTION_REQUEST_BYTES,
+  shouldPersistResolvedSource,
+} from "@/features/analytics/source-attribution";
+import {
+  clearSourceAttribution,
+  persistSourceAttribution,
+  resolveRequestSource,
+} from "@/features/analytics/source-attribution-server";
+import { ensureBuyerSession } from "@/features/analytics/buyer-session-server";
 import { prepareTelegramHandoff } from "@/features/contact/handoff";
 import { parseTelegramHandoffRequestBody } from "@/features/contact/telegram-request";
 
@@ -14,17 +23,6 @@ type TelegramHandoffRequestOptions = {
   isPreview: boolean;
   previewStoreSlug?: string;
 };
-
-function getSourceFromReferer(referer: string | null) {
-  if (!referer) return null;
-
-  try {
-    const url = new URL(referer);
-    return url.searchParams.get("source") ?? url.searchParams.get("utm_source");
-  } catch {
-    return null;
-  }
-}
 
 function getTrustedSiteOrigin() {
   const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -46,7 +44,19 @@ export async function handleTelegramHandoffRequest(
   let rawBody: unknown;
 
   try {
-    rawBody = await request.json();
+    const contentLength = Number(request.headers.get("content-length"));
+    if (
+      Number.isFinite(contentLength) &&
+      contentLength > MAX_ATTRIBUTION_REQUEST_BYTES
+    ) {
+      return Response.json({ message: "РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ Р·Р°РїСЂРѕСЃ." }, { status: 400 });
+    }
+
+    const rawText = await request.text();
+    if (new TextEncoder().encode(rawText).byteLength > MAX_ATTRIBUTION_REQUEST_BYTES) {
+      return Response.json({ message: "РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ Р·Р°РїСЂРѕСЃ." }, { status: 400 });
+    }
+    rawBody = JSON.parse(rawText);
   } catch {
     return Response.json({ message: "Некорректный запрос." }, { status: 400 });
   }
@@ -72,19 +82,30 @@ export async function handleTelegramHandoffRequest(
   }
 
   const cookieStore = await cookies();
-  const sessionId = normalizeAnalyticsSessionId(
-    cookieStore.get("buyer_session_id")?.value,
-  );
-  const source = normalizeAnalyticsSource(
-    body.source ?? getSourceFromReferer(request.headers.get("referer")),
-  );
+  const session = options.isPreview
+    ? {
+        value: normalizeAnalyticsSessionId(
+          cookieStore.get("buyer_session_id")?.value,
+        ),
+        created: false,
+      }
+    : ensureBuyerSession(cookieStore);
+  if (session.created) {
+    clearSourceAttribution(cookieStore);
+  }
+  const sourceResolution = resolveRequestSource(request, cookieStore, {
+    source: body.source,
+    utmSource: body.utmSource,
+    referrer: body.referrer || null,
+  });
+  const userAgentType = classifyAnalyticsUserAgent(request.headers.get("user-agent"));
   const result = await prepareTelegramHandoff({
     storeSlug: body.storeSlug,
     productId: body.productId,
     origin,
-    source,
-    sessionId,
-    userAgentType: classifyAnalyticsUserAgent(request.headers.get("user-agent")),
+    source: sourceResolution.source,
+    sessionId: session.value,
+    userAgentType,
     isPreview: options.isPreview,
   });
 
@@ -98,6 +119,17 @@ export async function handleTelegramHandoffRequest(
 
   if (result.status === "error") {
     return Response.json({ message: result.message }, { status: 503 });
+  }
+
+  if (
+    shouldPersistResolvedSource({
+      isPreview: options.isPreview,
+      source: sourceResolution.source,
+      status: "recorded",
+      userAgentType,
+    })
+  ) {
+    persistSourceAttribution(cookieStore, sourceResolution.source);
   }
 
   return Response.json({
