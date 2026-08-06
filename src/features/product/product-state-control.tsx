@@ -1,6 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useState,
+  type KeyboardEvent,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +48,7 @@ export function ProductStateControl({
     deleteProduct.bind(null, productId),
     getInitialProductLifecycleActionState(productStatus),
   );
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [lastAction, setLastAction] = useState<"publish" | "hide" | "delete" | null>(null);
   const {
     productStatus: contextStatus,
@@ -69,6 +75,19 @@ export function ProductStateControl({
       setProductStatus(actionState.productStatus);
     }
   }, [actionState, setProductStatus]);
+
+  function closeDeleteConfirmation() {
+    setDeleteConfirmationOpen(false);
+    requestAnimationFrame(() => {
+      document.getElementById("delete-product-trigger")?.focus();
+    });
+  }
+
+  function handleDeleteDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Escape" || pending) return;
+    event.preventDefault();
+    closeDeleteConfirmation();
+  }
 
   return (
     <section
@@ -111,25 +130,58 @@ export function ProductStateControl({
       ) : null}
 
       {displayedStatus !== PRODUCT_STATUS_DELETED ? (
-        <form
-          action={deleteAction}
-          onSubmit={(event) => {
-            setLastAction("delete");
-            if (!window.confirm("Удалить товар? Он исчезнет из публичных поверхностей.")) {
-              event.preventDefault();
-            }
-          }}
-        >
-          <input name="confirmDelete" type="hidden" value="yes" />
+        deleteConfirmationOpen ? (
+          <div
+            aria-describedby="delete-product-description"
+            aria-labelledby="delete-product-title"
+            aria-modal="false"
+            className="rounded-xl border border-border bg-muted p-4"
+            onKeyDown={handleDeleteDialogKeyDown}
+            role="alertdialog"
+          >
+            <p className="font-medium" id="delete-product-title">
+              Удалить товар?
+            </p>
+            <p
+              className="mt-2 text-sm leading-6 text-foreground/70"
+              id="delete-product-description"
+            >
+              Товар исчезнет из публичной витрины. Действие нельзя отменить.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <Button
+                className="w-full"
+                disabled={pending}
+                onClick={closeDeleteConfirmation}
+                variant="secondary"
+              >
+                Отмена
+              </Button>
+              <form action={deleteAction} onSubmit={() => setLastAction("delete")}>
+                <input name="confirmDelete" type="hidden" value="yes" />
+                <Button
+                  aria-label="Подтвердить удаление товара"
+                  autoFocus
+                  className="w-full"
+                  disabled={pending}
+                  type="submit"
+                >
+                  {deletePending ? "Удаляем…" : "Удалить товар"}
+                </Button>
+              </form>
+            </div>
+          </div>
+        ) : (
           <Button
             className="w-full"
             disabled={pending}
-            type="submit"
+            id="delete-product-trigger"
+            onClick={() => setDeleteConfirmationOpen(true)}
             variant="ghost"
           >
-            {deletePending ? "Удаляем…" : "Удалить товар"}
+            Удалить товар
           </Button>
-        </form>
+        )
       ) : null}
 
       <p

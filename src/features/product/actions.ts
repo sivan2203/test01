@@ -118,6 +118,18 @@ function getProductPayload(
   };
 }
 
+function getProductUpdatePayload(
+  validation: ReturnType<typeof validateProductDraftValues>,
+) {
+  return {
+    title: validation.normalized.title,
+    description: validation.normalized.description,
+    price_mode: validation.normalized.priceMode,
+    price_amount: validation.normalized.priceAmount,
+    availability_status: validation.normalized.availabilityStatus,
+  };
+}
+
 async function getOwnedProduct(
   supabase: SupabaseServerClient,
   productId: string,
@@ -222,7 +234,7 @@ export async function updateProduct(
 
     const { error } = await context.supabase
       .from("products")
-      .update(getProductPayload(validation, context.storeId))
+      .update(getProductUpdatePayload(validation))
       .eq("id", productId)
       .eq("store_id", context.storeId)
       .select("id")

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, type KeyboardEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,7 @@ export function ProductMediaManager({
     manageProductMedia.bind(null, productId),
     initialState,
   );
+  const [pendingRemovalId, setPendingRemovalId] = useState<string | null>(null);
   const media = state.media;
   const actionMessage = state.status !== "idle" ? state.message : initialError ?? "";
   const mediaLoadFailed = Boolean(initialError) && state.status === "idle";
@@ -46,6 +47,22 @@ export function ProductMediaManager({
     const ids = media.map((item) => item.id);
     [ids[index], ids[nextIndex]] = [ids[nextIndex], ids[index]];
     return JSON.stringify(ids);
+  }
+
+  function closeRemovalConfirmation(mediaId: string) {
+    setPendingRemovalId(null);
+    requestAnimationFrame(() => {
+      document.getElementById(`remove-photo-trigger-${mediaId}`)?.focus();
+    });
+  }
+
+  function handleRemovalDialogKeyDown(
+    event: KeyboardEvent<HTMLDivElement>,
+    mediaId: string,
+  ) {
+    if (event.key !== "Escape" || pending) return;
+    event.preventDefault();
+    closeRemovalConfirmation(mediaId);
   }
 
   return (
@@ -141,26 +158,65 @@ export function ProductMediaManager({
                   </form>
                 </div>
 
-                <form
-                  action={mediaAction}
-                  onSubmit={(event) => {
-                    if (!window.confirm(`Удалить фото ${index + 1} из ${media.length}?`)) {
-                      event.preventDefault();
+                {pendingRemovalId === item.id ? (
+                  <div
+                    aria-describedby={`remove-photo-description-${item.id}`}
+                    aria-labelledby={`remove-photo-title-${item.id}`}
+                    aria-modal="false"
+                    className="rounded-xl border border-border bg-muted p-3"
+                    onKeyDown={(event) =>
+                      handleRemovalDialogKeyDown(event, item.id)
                     }
-                  }}
-                >
-                  <input name="operation" type="hidden" value="remove" />
-                  <input name="mediaId" type="hidden" value={item.id} />
+                    role="alertdialog"
+                  >
+                    <p
+                      className="text-sm font-medium text-foreground"
+                      id={`remove-photo-title-${item.id}`}
+                    >
+                      Удалить фото {index + 1} из {media.length}?
+                    </p>
+                    <p
+                      className="mt-1 text-xs leading-5 text-foreground/65"
+                      id={`remove-photo-description-${item.id}`}
+                    >
+                      Действие нельзя отменить.
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Button
+                        className="w-full"
+                        disabled={pending}
+                        onClick={() => closeRemovalConfirmation(item.id)}
+                        variant="secondary"
+                      >
+                        Отмена
+                      </Button>
+                      <form action={mediaAction}>
+                        <input name="operation" type="hidden" value="remove" />
+                        <input name="mediaId" type="hidden" value={item.id} />
+                        <Button
+                          aria-label={`Подтвердить удаление фото ${index + 1} из ${media.length}`}
+                          autoFocus
+                          className="w-full"
+                          disabled={pending}
+                          type="submit"
+                        >
+                          {pending ? "Удаляем…" : "Удалить фото"}
+                        </Button>
+                      </form>
+                    </div>
+                  </div>
+                ) : (
                   <Button
                     aria-label={`Удалить фото ${index + 1} из ${media.length}`}
                     className="w-full"
                     disabled={pending}
+                    id={`remove-photo-trigger-${item.id}`}
+                    onClick={() => setPendingRemovalId(item.id)}
                     variant="ghost"
-                    type="submit"
                   >
                     Удалить
                   </Button>
-                </form>
+                )}
               </li>
             );
           })}

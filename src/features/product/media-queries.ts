@@ -181,6 +181,10 @@ export async function getSellerProductCovers(
     if (error) return { status: "error" };
 
     const mediaRows = rows ?? [];
+    if (mediaRows.length === 0) {
+      return { status: "found", covers: new Map() };
+    }
+
     const { data: signedUrls, error: signedUrlsError } = await supabase.storage
       .from(PRODUCT_MEDIA_BUCKET)
       .createSignedUrls(

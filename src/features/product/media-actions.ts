@@ -171,14 +171,17 @@ export async function uploadProductMedia(
       if (uploadError) throw new Error("upload");
       uploadedPaths.push(storagePath);
 
-      const { error: insertError } = await context.supabase.from("product_media").insert({
-        id: mediaId,
-        product_id: productId,
-        storage_path: storagePath,
-        mime_type: item.validation.mimeType,
-        byte_size: item.file.size,
-        sort_order: rowsResult.rows.length + index,
-      });
+      const { error: insertError } = await context.supabase.rpc(
+        "insert_product_media",
+        {
+          target_media_id: mediaId,
+          target_product_id: productId,
+          target_storage_path: storagePath,
+          target_mime_type: item.validation.mimeType,
+          target_byte_size: item.file.size,
+          target_sort_order: rowsResult.rows.length + index,
+        },
+      );
 
       if (insertError) throw new Error("insert");
       insertedIds.push(mediaId);
@@ -196,7 +199,12 @@ export async function uploadProductMedia(
       }
     }
     if (insertedIds.length > 0) {
-      await context.supabase.from("product_media").delete().in("id", insertedIds);
+      for (const insertedId of insertedIds) {
+        await context.supabase.rpc("remove_product_media", {
+          target_product_id: productId,
+          target_media_id: insertedId,
+        });
+      }
     }
     return errorState(previousState, "Не удалось сохранить фотографии. Попробуйте ещё раз.");
   }
