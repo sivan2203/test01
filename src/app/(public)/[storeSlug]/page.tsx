@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { PublicAnalyticsBeacon } from "@/features/analytics/public-analytics-beacon";
 import { MAX_SOURCE_HINT_LENGTH } from "@/features/analytics/source-attribution";
@@ -8,19 +10,41 @@ import { PublicStorefrontShell } from "@/features/store/public-storefront-shell"
 
 export const dynamic = "force-dynamic";
 
-export default async function PublicStorePage({
-  params,
-  searchParams,
-}: {
+const getCachedPublicStoreBySlug = cache(getPublicStoreBySlug);
+
+type PublicStorePageProps = {
   params: Promise<{ storeSlug: string }>;
   searchParams: Promise<{
     source?: string | string[];
     utm_source?: string | string[];
   }>;
-}) {
+};
+
+export async function generateMetadata({
+  params,
+}: Pick<PublicStorePageProps, "params">): Promise<Metadata> {
+  const { storeSlug } = await params;
+  const storeResult = await getCachedPublicStoreBySlug(storeSlug);
+
+  if (storeResult.status !== "found") {
+    return { title: "Витрина не найдена" };
+  }
+
+  return {
+    title: storeResult.store.name,
+    description:
+      storeResult.store.description ||
+      `Товары магазина «${storeResult.store.name}».`,
+  };
+}
+
+export default async function PublicStorePage({
+  params,
+  searchParams,
+}: PublicStorePageProps) {
   const { storeSlug } = await params;
   const query = await searchParams;
-  const storeResult = await getPublicStoreBySlug(storeSlug);
+  const storeResult = await getCachedPublicStoreBySlug(storeSlug);
 
   if (storeResult.status === "not_found") {
     notFound();

@@ -29,7 +29,7 @@ export function PublicStorefrontImage({
       <div
         aria-label={`${alt}. ${fallbackLabel}`}
         className={cn(
-          "flex items-center justify-center border border-dashed border-border bg-surface-muted px-3 text-center text-xs text-foreground/55",
+          "flex items-center justify-center border border-dashed border-border-strong bg-surface-muted px-3 text-center text-xs text-ink-secondary",
           fallbackClassName,
         )}
         role="img"

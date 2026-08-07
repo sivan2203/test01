@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { PublicAnalyticsBeacon } from "@/features/analytics/public-analytics-beacon";
 import { getPublicProductForStore } from "@/features/store/public-catalog";
@@ -9,16 +11,45 @@ import { PublicProductDetail } from "@/features/store/public-product-detail";
 
 export const dynamic = "force-dynamic";
 
+const getCachedPublicProductForStore = cache(getPublicProductForStore);
+const getCachedPublicStoreBySlug = cache(getPublicStoreBySlug);
+
+type PublicProductPageProps = {
+  params: Promise<{ storeSlug: string; productId: string }>;
+  searchParams: Promise<{ preview?: string }>;
+};
+
+export async function generateMetadata({
+  params,
+}: Pick<PublicProductPageProps, "params">): Promise<Metadata> {
+  const { productId, storeSlug } = await params;
+  const [productResult, storeResult] = await Promise.all([
+    getCachedPublicProductForStore(storeSlug, productId),
+    getCachedPublicStoreBySlug(storeSlug),
+  ]);
+
+  if (productResult.status !== "found") {
+    return { title: "Товар не найден" };
+  }
+
+  return {
+    title:
+      storeResult.status === "found"
+        ? `${productResult.product.title} — ${storeResult.store.name}`
+        : productResult.product.title,
+    description:
+      productResult.product.description ||
+      `Товар «${productResult.product.title}».`,
+  };
+}
+
 export default async function PublicProductPage({
   params,
   searchParams,
-}: {
-  params: Promise<{ storeSlug: string; productId: string }>;
-  searchParams: Promise<{ preview?: string }>;
-}) {
+}: PublicProductPageProps) {
   const { productId, storeSlug } = await params;
   const { preview } = await searchParams;
-  const productResult = await getPublicProductForStore(storeSlug, productId);
+  const productResult = await getCachedPublicProductForStore(storeSlug, productId);
 
   if (productResult.status === "not_found") {
     notFound();
@@ -28,7 +59,7 @@ export default async function PublicProductPage({
     throw new Error("Public product lookup failed.");
   }
 
-  const storeResult = await getPublicStoreBySlug(storeSlug);
+  const storeResult = await getCachedPublicStoreBySlug(storeSlug);
   if (storeResult.status === "not_found") {
     notFound();
   }

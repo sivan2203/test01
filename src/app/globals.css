@@ -1,52 +1,129 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f7f5;
-  --foreground: #111111;
-  --surface-raised: #ffffff;
-  --surface-muted: #ededeb;
-  --surface-glass: rgba(255, 255, 255, 0.72);
-  --border: rgba(17, 17, 17, 0.12);
-  --ring: #111111;
-  --primary: #111111;
+  color-scheme: light;
+  --background: #f5f3ee;
+  --foreground: #171716;
+  --surface-raised: #fbfaf7;
+  --surface-muted: #ece9e2;
+  --surface-inverse: #171716;
+  --ink-secondary: #5e5d57;
+  --ink-disabled: #706f69;
+  --border: #d8d5ce;
+  --border-strong: #88857e;
+  --ring: #2457e6;
+  --primary: #2457e6;
   --primary-foreground: #ffffff;
-  --telegram: #0877ad;
+  --success: #1e6b48;
+  --success-surface: #eaf3ed;
+  --warning: #7a570d;
+  --warning-surface: #f5eedf;
+  --destructive: #a4352b;
+  --destructive-surface: #f7e8e6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface-base: var(--background);
   --color-surface-raised: var(--surface-raised);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-inverse: var(--surface-inverse);
   --color-muted: var(--surface-muted);
-  --color-glass: var(--surface-glass);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-disabled: var(--ink-disabled);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-ring: var(--ring);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-telegram: var(--telegram);
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
+  --color-telegram: var(--primary);
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
+  --color-destructive: var(--destructive);
+  --color-destructive-surface: var(--destructive-surface);
+  --font-sans: var(--font-onest), "Segoe UI", Arial, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), Consolas, monospace;
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.625rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #111111;
-    --foreground: #f7f7f5;
-    --surface-raised: #1b1b1b;
-    --surface-muted: #252525;
-    --surface-glass: rgba(27, 27, 27, 0.72);
-    --border: rgba(247, 247, 245, 0.16);
-    --ring: #f7f7f5;
-    --primary: #f7f7f5;
-    --primary-foreground: #111111;
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-block-start: 5rem;
+  scroll-padding-block-end: 14rem;
+}
+
+@media (min-width: 64rem) {
+  html {
+    scroll-padding-block-end: 5rem;
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  :root {
-    --surface-glass: var(--surface-raised);
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-onest), "Segoe UI", Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: #cad6ff;
+  color: #171716;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 100;
+  translate: 0 -200%;
+  border-radius: 0.375rem;
+  background: var(--surface-inverse);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  font-weight: 650;
+  transition: translate 120ms ease-out;
+}
+
+.skip-link:focus {
+  translate: 0;
+}
+
+dialog::backdrop {
+  background: rgb(23 23 22 / 55%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
@@ -56,17 +133,21 @@
     --foreground: CanvasText;
     --surface-raised: Canvas;
     --surface-muted: Canvas;
-    --surface-glass: Canvas;
+    --surface-inverse: CanvasText;
+    --ink-secondary: CanvasText;
+    --ink-disabled: GrayText;
     --border: CanvasText;
+    --border-strong: CanvasText;
     --ring: Highlight;
-    --primary: ButtonText;
-    --primary-foreground: ButtonFace;
-    --telegram: LinkText;
+    --primary: Highlight;
+    --primary-foreground: HighlightText;
+    --success: CanvasText;
+    --warning: CanvasText;
+    --destructive: CanvasText;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  :focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 3px !important;
+  }
 }

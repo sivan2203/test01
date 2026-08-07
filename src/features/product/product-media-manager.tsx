@@ -1,45 +1,165 @@
 "use client";
 
-import { useActionState, useState, type KeyboardEvent } from "react";
+/* eslint-disable @next/next/no-img-element */
 
-import { Button } from "@/components/ui/button";
 import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { StatusMessage } from "@/components/ui/status-message";
+import { manageProductMedia } from "./media-actions";
+import {
+  canRemoveProductMedia,
   getInitialProductMediaActionState,
   type ProductMedia,
 } from "./media-schema";
-import { manageProductMedia } from "./media-actions";
+import { ProductMediaUploadQueue } from "./product-media-upload-queue";
 import { useProductLifecycleStatus } from "./product-lifecycle-context";
 import type { ProductStatus } from "./schema";
 
-type ProductMediaManagerProps = {
+export type ProductMediaManagerProps = {
   productId: string;
   productTitle: string;
-  productStatus: ProductStatus;
+  productStatus?: ProductStatus;
   initialMedia: ProductMedia[];
   initialError?: string;
+  onMediaChange?: (media: ProductMedia[]) => void;
+  onBusyChange?: (busy: boolean) => void;
 };
 
-function mediaActionClassName(message: string) {
-  return message ? "text-sm leading-6 text-foreground/75" : "sr-only";
+function normalizeMedia(media: ProductMedia[]) {
+  return [...media]
+    .sort((left, right) => left.sortOrder - right.sortOrder)
+    .map((item, index) => ({
+      ...item,
+      sortOrder: index,
+      isCover: index === 0,
+    }));
 }
 
 export function ProductMediaManager({
   productId,
   productTitle,
-  productStatus,
+  productStatus = "draft",
   initialMedia,
   initialError,
+  onMediaChange,
+  onBusyChange,
 }: ProductMediaManagerProps) {
-  const lifecycle = useProductLifecycleStatus(productStatus);
   const initialState = getInitialProductMediaActionState(initialMedia);
-  const [state, mediaAction, pending] = useActionState(
-    manageProductMedia.bind(null, productId),
-    initialState,
-  );
+  const [actionState, setActionState] = useState(initialState);
+  const [mutationPending, startMutation] = useTransition();
+  const [media, setMedia] = useState(() => normalizeMedia(initialMedia));
   const [pendingRemovalId, setPendingRemovalId] = useState<string | null>(null);
-  const media = state.media;
-  const actionMessage = state.status !== "idle" ? state.message : initialError ?? "";
-  const mediaLoadFailed = Boolean(initialError) && state.status === "idle";
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const mediaRef = useRef(media);
+  const actionStateRef = useRef(actionState);
+  const onMediaChangeRef = useRef(onMediaChange);
+  const removalDialogOpenRef = useRef(false);
+  const {
+    productStatus: lifecycleStatus,
+    setMediaCount,
+  } = useProductLifecycleStatus(productStatus);
+
+  useEffect(() => {
+    onMediaChangeRef.current = onMediaChange;
+  }, [onMediaChange]);
+
+  const commitMedia = useCallback(
+    (nextMedia: ProductMedia[], notify = true) => {
+      const normalized = normalizeMedia(nextMedia);
+      mediaRef.current = normalized;
+      setMedia(normalized);
+      setMediaCount(normalized.length);
+      if (notify) onMediaChangeRef.current?.(normalized);
+    },
+    [setMediaCount],
+  );
+
+  const runMediaMutation = useCallback(
+    (formData: FormData) => {
+      const operation = String(formData.get("operation") ?? "");
+      const focusMediaId = String(formData.get("focusMediaId") ?? "");
+      const reorderKind = String(formData.get("reorderKind") ?? "");
+      const previousIndex = mediaRef.current.findIndex(
+        (item) => item.id === focusMediaId,
+      );
+      startMutation(async () => {
+        let nextState;
+        try {
+          nextState = await manageProductMedia(
+            productId,
+            actionStateRef.current,
+            formData,
+          );
+        } catch {
+          nextState = {
+            status: "error" as const,
+            message:
+              "Соединение прервалось. Фотографии не изменены — повторите действие.",
+            media: mediaRef.current,
+          };
+        }
+        if (
+          nextState.status === "success" &&
+          operation === "reorder" &&
+          focusMediaId
+        ) {
+          const nextIndex = nextState.media.findIndex(
+            (item) => item.id === focusMediaId,
+          );
+          nextState = {
+            ...nextState,
+            message:
+              reorderKind === "cover"
+                ? `Фото ${previousIndex + 1} стало обложкой и перемещено на позицию 1.`
+                : `Фото перемещено с позиции ${previousIndex + 1} на позицию ${nextIndex + 1}.`,
+          };
+        }
+        actionStateRef.current = nextState;
+        setActionState(nextState);
+        if (nextState.status === "success") {
+          commitMedia(nextState.media);
+          if (operation === "remove") {
+            const shouldMoveFocus = removalDialogOpenRef.current;
+            removalDialogOpenRef.current = false;
+            setPendingRemovalId(null);
+            if (shouldMoveFocus) {
+              requestAnimationFrame(() => {
+                document.getElementById("product-media-heading")?.focus();
+              });
+            }
+          } else if (operation === "reorder" && focusMediaId) {
+            requestAnimationFrame(() => {
+              document
+                .getElementById(`product-media-row-${focusMediaId}`)
+                ?.focus();
+            });
+          }
+        }
+      });
+    },
+    [commitMedia, productId],
+  );
+
+  const handleUploaded = useCallback(
+    (uploaded: ProductMedia) => {
+      const next = [
+        ...mediaRef.current.filter((item) => item.id !== uploaded.id),
+        uploaded,
+      ];
+      commitMedia(next);
+    },
+    [commitMedia],
+  );
 
   function getReorderedIds(index: number, direction: -1 | 1) {
     const nextIndex = index + direction;
@@ -49,193 +169,252 @@ export function ProductMediaManager({
     return JSON.stringify(ids);
   }
 
-  function closeRemovalConfirmation(mediaId: string) {
-    setPendingRemovalId(null);
-    requestAnimationFrame(() => {
-      document.getElementById(`remove-photo-trigger-${mediaId}`)?.focus();
-    });
+  function getCoverOrder(mediaId: string) {
+    return JSON.stringify([
+      mediaId,
+      ...media.filter((item) => item.id !== mediaId).map((item) => item.id),
+    ]);
   }
 
-  function handleRemovalDialogKeyDown(
-    event: KeyboardEvent<HTMLDivElement>,
-    mediaId: string,
-  ) {
-    if (event.key !== "Escape" || pending) return;
-    event.preventDefault();
-    closeRemovalConfirmation(mediaId);
-  }
+  const mediaLoadFailed = Boolean(initialError) && actionState.status === "idle";
+  const controlsDisabled = mutationPending || uploadBusy;
+  const removalMedia = media.find((item) => item.id === pendingRemovalId) ?? null;
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="product-media-heading">
-      <div>
-        <p className="text-sm text-foreground/60">Фотографии</p>
-        <h2 id="product-media-heading" className="mt-1 text-xl font-semibold">
+    <section className="space-y-6" aria-labelledby="product-media-heading">
+      <div className="border-b border-border-strong pb-4">
+        <p className="font-mono text-xs text-ink-secondary">Фотографии</p>
+        <h2
+          className="mt-1 text-xl font-semibold tracking-tight outline-none"
+          id="product-media-heading"
+          tabIndex={-1}
+        >
           Фото товара
         </h2>
-        <p className="mt-2 text-sm leading-6 text-foreground/70">
-          JPG, PNG или WebP до 6 МБ каждое. Можно добавить до 10 фотографий. Первая фотография — обложка.
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-secondary">
+          Превью появляется сразу. Файлы загружаются по одному; первая
+          сохранённая позиция становится обложкой.
         </p>
       </div>
 
-      <form action={mediaAction} className="flex flex-col gap-3">
-        <input name="operation" type="hidden" value="upload" />
-        <label
-          className="flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-border bg-surface-raised px-5 text-center text-sm font-medium text-foreground hover:bg-muted"
-          htmlFor="product-media-files"
-        >
-          Добавить фотографии
-          <input
-            accept="image/jpeg,image/png,image/webp"
-            className="sr-only"
-            disabled={pending}
-            id="product-media-files"
-            multiple
-            name="files"
-            type="file"
-          />
-        </label>
-        <Button disabled={pending} type="submit">
-          {pending ? "Сохраняем фотографии…" : "Сохранить выбранные фото"}
-        </Button>
-      </form>
-
-      <p className="text-sm text-foreground/60" aria-live="polite">
-        {media.length} из 10 фотографий
-      </p>
-
       {mediaLoadFailed ? (
-        <p className="rounded-2xl border border-dashed border-border p-4 text-sm leading-6 text-foreground/70" role="alert">
-          Не удалось загрузить сохранённые фотографии. Обновите страницу; пустой список не означает, что фотографии отсутствуют.
+        <Alert tone="danger" title="Не удалось загрузить сохранённые фотографии">
+          Обновите страницу перед добавлением новых файлов. Пустой список не
+          означает, что фотографий нет.
+        </Alert>
+      ) : null}
+
+      <ProductMediaUploadQueue
+        disabled={mutationPending || mediaLoadFailed}
+        onBusyChange={(busy) => {
+          setUploadBusy(busy);
+          onBusyChange?.(busy);
+        }}
+        onUploaded={handleUploaded}
+        persistedCount={media.length}
+        productId={productId}
+        productTitle={productTitle}
+      />
+
+      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border-strong pb-3">
+        <h3 className="text-base font-semibold">Сохранённые фотографии</h3>
+        <p className="font-mono text-xs text-ink-secondary">
+          {media.length} из 10
         </p>
-      ) : media.length > 0 ? (
-        <ol className="grid grid-cols-2 gap-3" aria-label={`Фотографии товара ${productTitle}`}>
+      </div>
+
+      {media.length > 0 ? (
+        <ol className="divide-y divide-border border-b border-border" aria-label={`Фотографии товара ${productTitle}`}>
           {media.map((item, index) => {
             const previousOrder = getReorderedIds(index, -1);
             const nextOrder = getReorderedIds(index, 1);
 
             return (
               <li
-                className="flex min-w-0 flex-col gap-2 rounded-2xl border border-border bg-surface-raised p-2"
+                className="grid gap-4 py-4 outline-none sm:grid-cols-[7rem_minmax(0,1fr)] lg:grid-cols-[7rem_minmax(0,1fr)_auto] lg:items-center"
+                id={`product-media-row-${item.id}`}
                 key={item.id}
+                tabIndex={-1}
               >
-                <figure>
+                {item.url ? (
                   <img
                     alt={`Фото ${index + 1} из ${media.length}: ${productTitle}`}
-                    className="aspect-square w-full rounded-xl object-cover"
+                    className="aspect-square h-28 w-28 rounded-sm object-cover"
+                    height={112}
                     src={item.url}
+                    width={112}
                   />
-                  <figcaption className="mt-2 text-xs leading-5 text-foreground/65">
-                    {item.isCover ? "Обложка · " : ""}Фото {index + 1} из {media.length}
-                  </figcaption>
-                </figure>
+                ) : (
+                  <div
+                    aria-label={`Предпросмотр фото ${index + 1} временно недоступен`}
+                    className="flex aspect-square h-28 w-28 items-center justify-center rounded-sm border border-dashed border-border-strong bg-surface-muted p-2 text-center text-xs text-ink-secondary"
+                    role="img"
+                  >
+                    Обновите для предпросмотра
+                  </div>
+                )}
 
-                <div className="grid grid-cols-2 gap-2">
-                  <form action={mediaAction}>
-                    <input name="operation" type="hidden" value="reorder" />
-                    <input name="orderedMediaIds" type="hidden" value={previousOrder ?? ""} />
-                    <Button
-                      aria-label={`Переместить фото ${index + 1} из ${media.length} выше`}
-                      className="w-full"
-                      disabled={!previousOrder || pending}
-                      variant="secondary"
-                      type="submit"
-                    >
-                      ↑
-                    </Button>
-                  </form>
-                  <form action={mediaAction}>
-                    <input name="operation" type="hidden" value="reorder" />
-                    <input name="orderedMediaIds" type="hidden" value={nextOrder ?? ""} />
-                    <Button
-                      aria-label={`Переместить фото ${index + 1} из ${media.length} ниже`}
-                      className="w-full"
-                      disabled={!nextOrder || pending}
-                      variant="secondary"
-                      type="submit"
-                    >
-                      ↓
-                    </Button>
-                  </form>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold">
+                      Фото {index + 1} из {media.length}
+                    </p>
+                    {item.isCover ? (
+                      <StatusBadge tone="success">Обложка</StatusBadge>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 font-mono text-xs text-ink-secondary">
+                    Позиция {index + 1}
+                  </p>
                 </div>
 
-                {pendingRemovalId === item.id ? (
-                  <div
-                    aria-describedby={`remove-photo-description-${item.id}`}
-                    aria-labelledby={`remove-photo-title-${item.id}`}
-                    aria-modal="false"
-                    className="rounded-xl border border-border bg-muted p-3"
-                    onKeyDown={(event) =>
-                      handleRemovalDialogKeyDown(event, item.id)
-                    }
-                    role="alertdialog"
-                  >
-                    <p
-                      className="text-sm font-medium text-foreground"
-                      id={`remove-photo-title-${item.id}`}
+                <div className="flex flex-wrap gap-2 sm:col-start-2 lg:col-start-auto lg:justify-end">
+                  {!item.isCover ? (
+                    <form
+                      action={runMediaMutation}
                     >
-                      Удалить фото {index + 1} из {media.length}?
-                    </p>
-                    <p
-                      className="mt-1 text-xs leading-5 text-foreground/65"
-                      id={`remove-photo-description-${item.id}`}
-                    >
-                      Действие нельзя отменить.
-                    </p>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <Button
-                        className="w-full"
-                        disabled={pending}
-                        onClick={() => closeRemovalConfirmation(item.id)}
-                        variant="secondary"
-                      >
-                        Отмена
+                      <input name="operation" type="hidden" value="reorder" />
+                      <input
+                        name="orderedMediaIds"
+                        type="hidden"
+                        value={getCoverOrder(item.id)}
+                      />
+                      <input name="focusMediaId" type="hidden" value={item.id} />
+                      <input name="reorderKind" type="hidden" value="cover" />
+                      <Button disabled={controlsDisabled} size="compact" type="submit" variant="secondary">
+                        Сделать обложкой
                       </Button>
-                      <form action={mediaAction}>
-                        <input name="operation" type="hidden" value="remove" />
-                        <input name="mediaId" type="hidden" value={item.id} />
-                        <Button
-                          aria-label={`Подтвердить удаление фото ${index + 1} из ${media.length}`}
-                          autoFocus
-                          className="w-full"
-                          disabled={pending}
-                          type="submit"
-                        >
-                          {pending ? "Удаляем…" : "Удалить фото"}
-                        </Button>
-                      </form>
-                    </div>
-                  </div>
-                ) : (
+                    </form>
+                  ) : null}
+
+                  <form action={runMediaMutation}>
+                    <input name="operation" type="hidden" value="reorder" />
+                    <input name="orderedMediaIds" type="hidden" value={previousOrder ?? ""} />
+                    <input name="focusMediaId" type="hidden" value={item.id} />
+                    <input name="reorderKind" type="hidden" value="move" />
+                    <Button
+                      aria-label={`Переместить фото ${index + 1} из ${media.length} выше`}
+                      disabled={!previousOrder || controlsDisabled}
+                      size="compact"
+                      type="submit"
+                      variant="secondary"
+                    >
+                      Выше
+                    </Button>
+                  </form>
+
+                  <form action={runMediaMutation}>
+                    <input name="operation" type="hidden" value="reorder" />
+                    <input name="orderedMediaIds" type="hidden" value={nextOrder ?? ""} />
+                    <input name="focusMediaId" type="hidden" value={item.id} />
+                    <input name="reorderKind" type="hidden" value="move" />
+                    <Button
+                      aria-label={`Переместить фото ${index + 1} из ${media.length} ниже`}
+                      disabled={!nextOrder || controlsDisabled}
+                      size="compact"
+                      type="submit"
+                      variant="secondary"
+                    >
+                      Ниже
+                    </Button>
+                  </form>
+
                   <Button
                     aria-label={`Удалить фото ${index + 1} из ${media.length}`}
-                    className="w-full"
-                    disabled={pending}
+                    disabled={
+                      controlsDisabled ||
+                      !canRemoveProductMedia(lifecycleStatus, media.length)
+                    }
                     id={`remove-photo-trigger-${item.id}`}
-                    onClick={() => setPendingRemovalId(item.id)}
-                    variant="ghost"
+                    onClick={() => {
+                      removalDialogOpenRef.current = true;
+                      setPendingRemovalId(item.id);
+                    }}
+                    size="compact"
+                    variant="destructive"
                   >
                     Удалить
                   </Button>
-                )}
+                </div>
               </li>
             );
           })}
         </ol>
-      ) : (
-        <p className="rounded-2xl border border-dashed border-border p-4 text-sm leading-6 text-foreground/70">
-          У товара пока нет фотографий. Их можно добавить сейчас или позже; для публикации понадобится от 1 до 10 фото.
-        </p>
+      ) : mediaLoadFailed ? null : (
+        <div className="border-y border-border py-6">
+          <p className="font-semibold">Сохранённых фотографий пока нет</p>
+          <p className="mt-2 text-sm leading-6 text-ink-secondary">
+            Черновик можно оставить без фото. Для публикации потребуется хотя бы
+            одна фотография.
+          </p>
+        </div>
       )}
 
-      <p className={mediaActionClassName(actionMessage)} role="alert" aria-live="polite">
-        {actionMessage || "Нет сообщений"}
-      </p>
+      <StatusMessage error={actionState.status === "error"}>
+        {actionState.status === "idle" ? initialError : actionState.message}
+      </StatusMessage>
 
-      {lifecycle.productStatus === "published" ? (
-        <p className="text-xs leading-5 text-foreground/60">
-          Опубликованный товар должен сохранять хотя бы одну фотографию.
+      {lifecycleStatus === "published" ? (
+        <p className="text-xs leading-5 text-ink-secondary">
+          У опубликованного товара должна оставаться хотя бы одна фотография.
         </p>
       ) : null}
+
+      <Dialog
+        actions={
+          <>
+            <Button
+              data-dialog-initial-focus
+              onClick={() => {
+                removalDialogOpenRef.current = false;
+                setPendingRemovalId(null);
+              }}
+              variant="secondary"
+            >
+              {mutationPending ? "Закрыть" : "Отмена"}
+            </Button>
+            {removalMedia ? (
+              <form
+                action={runMediaMutation}
+              >
+                <input name="operation" type="hidden" value="remove" />
+                <input name="mediaId" type="hidden" value={removalMedia.id} />
+                <Button
+                  aria-label="Подтвердить удаление фотографии"
+                  disabled={mutationPending}
+                  type="submit"
+                  variant="destructive"
+                >
+                  {mutationPending ? "Удаляем…" : "Удалить фотографию"}
+                </Button>
+              </form>
+            ) : null}
+          </>
+        }
+        description="Файл будет удалён из товара. Действие нельзя отменить."
+        fallbackFocusId="product-media-heading"
+        onOpenChange={(open) => {
+          if (!open) {
+            removalDialogOpenRef.current = false;
+            setPendingRemovalId(null);
+          }
+        }}
+        open={Boolean(removalMedia)}
+        title="Удалить фотографию?"
+      >
+        {mutationPending ? (
+          <StatusMessage>Удаление выполняется. Диалог можно закрыть — операция продолжится.</StatusMessage>
+        ) : null}
+        {removalMedia?.url ? (
+          <img
+            alt="Фотография, выбранная для удаления"
+            className="h-20 w-20 rounded-sm object-cover"
+            height={80}
+            src={removalMedia.url}
+            width={80}
+          />
+        ) : null}
+      </Dialog>
     </section>
   );
 }

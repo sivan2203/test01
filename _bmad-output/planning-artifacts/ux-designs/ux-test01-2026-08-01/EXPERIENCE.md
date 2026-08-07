@@ -1,223 +1,339 @@
 ---
 name: Персональная витрина
-status: draft
+status: final
 sources:
-  - C:\Work\projects\test01\_bmad-output\planning-artifacts\prds\prd-test01-2026-08-01\prd.md
-  - C:\Work\projects\test01\_bmad-output\planning-artifacts\prds\prd-test01-2026-08-01\addendum.md
-  - C:\Work\projects\test01\_bmad-output\planning-artifacts\prds\prd-test01-2026-08-01\validation-report.md
-updated: 2026-08-01
+  - ../../prds/prd-test01-2026-08-01/prd.md
+  - ../../prds/prd-test01-2026-08-01/addendum.md
+  - ../../prds/prd-test01-2026-08-01/validation-report.md
+  - DECISIONS.md
+  - RESEARCH.md
+  - AUDIT.md
+updated: 2026-08-07
 ---
 
-# Персональная витрина — EXPERIENCE.md
+# Персональная витрина — поведенческий контракт
 
 ## Foundation
 
-Single-surface responsive web, mobile-first. MVP optimizes for phones first for both seller and buyer. Desktop must work, but desktop is not the design source of truth.
+Персональная витрина — один responsive web-продукт для продавца и покупателя. Основной язык интерфейса — русский. Обязательная тема этого этапа — светлая. Реализация наследует существующие Next.js, React, Tailwind и CVA primitives; новая UI-библиотека не требуется. Нативный `<dialog>`, Server Actions, same-origin Route Handler/XHR для media и текущий Supabase-контракт остаются основой.
 
-`DESIGN.md` owns visual identity and tokens. This document owns IA, behavior, states, interaction, accessibility, and flow rules. When a mockup conflicts with either spine, the spines win.
+`DESIGN.md` определяет внешний вид и токены. Этот документ определяет information architecture, поведение, состояния, взаимодействие, доступность и journeys. PRD сохраняет бизнес-границы:
 
-MVP contact model: buyer does not register; CTA opens Telegram with a prefilled product-context message. WhatsApp, VK, multiple active messengers, internal chat, buyer accounts, and alternative seller contacts are not MVP.
+- Покупателю не нужен аккаунт.
+- Telegram — единственный MVP contact channel.
+- Нет marketplace discovery, корзины, оплаты, доставки, внутреннего чата, заказов, отзывов и CRM.
+- FR-9 Excel/CSV import остаётся `Should / conditional` и не задерживает manual core loop.
+- Публично видны только Опубликованные товары; Черновики, Скрытые и удалённые товары не раскрываются.
 
-Visual references:
+Иллюстративные композиции:
 
-- [`mockups/storefront-mobile.html`](mockups/storefront-mobile.html) — public storefront header, catalog grid, product card, Telegram CTA.
-- [`mockups/seller-dashboard-mobile.html`](mockups/seller-dashboard-mobile.html) — seller home analytics hierarchy, top source, bottom navigation.
+- [`mockups/key-seller-dashboard-desktop.html`](mockups/key-seller-dashboard-desktop.html) — seller shell и operational dashboard;
+- [`mockups/key-product-wizard-review.html`](mockups/key-product-wizard-review.html) — review шага 4 на desktop и 390px;
+- [`mockups/key-product-media-dialog.html`](mockups/key-product-media-dialog.html) — media queue и destructive dialog;
+- [`mockups/key-store-settings-preview.html`](mockups/key-store-settings-preview.html) — settings sections, preview и dirty state;
+- [`mockups/key-public-storefront-product.html`](mockups/key-public-storefront-product.html) — публичная Карточка товара;
+- [`mockups/storefront-mobile.html`](mockups/storefront-mobile.html) и [`mockups/seller-dashboard-mobile.html`](mockups/seller-dashboard-mobile.html) — ранние mobile composition references.
 
-Spines win on conflict with mockups.
+**Spines имеют приоритет над mockups.** Иллюстрации не задают transport, storage limits, semantic roles или бизнес-правила. Канонические лимиты: товарное изображение до 6 MiB, максимум 10; avatar до 2 MiB.
 
 ## Information Architecture
 
 ### Seller surfaces
 
-| Surface | Reached from | Purpose |
+| Surface | Вход | Назначение |
 |---|---|---|
-| Seller auth | Direct / protected route | Seller registration and login |
-| Seller home dashboard | After login | Today's views, product views, CTA clicks, top source, next action |
-| Store setup/edit | Dashboard CTA / settings | Name, photo/avatar, optional description, slug, Telegram |
-| Product list | Dashboard / bottom nav | Manage drafts, published, hidden products |
-| Product create/edit | Product list / empty setup | Add or edit product content, media, price, availability, publish state |
-| Import drafts | Product list / setup | Optional `Should`: Excel/CSV to product drafts |
-| Analytics detail | Dashboard card tap | Today + 7-day metrics by store/product/source |
-| Preview as buyer | Dashboard / store editor | Public storefront view without counting analytics |
+| Seller auth | Прямой URL / redirect protected route | Magic-link регистрация и вход; buyer auth отсутствует |
+| Seller home dashboard | После входа | Setup health либо метрики за сегодня/7 дней, attention queue, главный action |
+| Product list | Seller navigation / dashboard | Фильтры по lifecycle, поиск, responsive rows и переход к редактированию |
+| Product create wizard | `Добавить товар` | Четыре шага создания, draft persistence, фото, review и явная публикация |
+| Product editor | Product row / review `Изменить` | Секционное редактирование существующего товара и отдельный lifecycle control |
+| Import drafts | Product list | Условный FR-9: file mapping, preview и создание только Черновиков |
+| Analytics detail | Dashboard / navigation | Сегодня и 7 дней по Магазину, Товарам и источникам |
+| Store settings | Navigation / setup task | Профиль, Публичная ссылка, Связь, О витрине; dirty state и preview |
+| Preview as buyer | Dashboard / settings | Авторизованный просмотр сохранённой публичной структуры без analytics events |
 
 ### Buyer surfaces
 
-| Surface | Reached from | Purpose |
+| Surface | Вход | Назначение |
 |---|---|---|
-| Public storefront | Store public link | Store header, optional description, catalog list/grid |
-| Product detail | Product card tap | Photos, description, price, availability, CTA |
-| Telegram handoff | CTA tap | Opens Telegram deep link with prefilled message |
-| Not found | Invalid store/product URL | Clear 404, no marketplace browsing |
-| Empty store | Public store with no products / unpublished | Explain that seller has not published products yet |
+| Public storefront | `/:storeSlug` | Store header, list/grid каталог и CTA из карточки |
+| Product detail | Карточка в каталоге / permalink | Галерея, title, price, availability, description и contextual Telegram CTA |
+| Telegram handoff | CTA | Server-trusted message, analytics best-effort, external deep link |
+| Copy-message fallback | Deep-link failure | Сохранить покупателя на странице и дать скопировать тот же message context |
+| Empty store | Существующий Магазин без Опубликованных товаров | Объяснить отсутствие каталога без server-error framing |
+| Not found | Неизвестный/старый slug или непубличный товар | Entity-specific 404 без утечки приватного состояния |
 
-Navigation: seller uses bottom nav or compact top navigation on mobile: Home / Products / Analytics / Store. Buyer surfaces should not show app-like nav; the store link is the whole experience. The public storefront composition is illustrated in [`mockups/storefront-mobile.html`](mockups/storefront-mobile.html); the seller home composition is illustrated in [`mockups/seller-dashboard-mobile.html`](mockups/seller-dashboard-mobile.html).
+Seller navigation: desktop sidebar при достаточной ширине; mobile bottom navigation `Сводка / Товары / Аналитика / Магазин`. Активный route отмечен `aria-current="page"`. Settings используют вторичную section navigation, но не отдельный onboarding wizard. Buyer surfaces не показывают app navigation.
+
+Публичная доступность начинается после первого Опубликованного товара. Activation success по SM-1/SM-2 остаётся отдельной метрикой: три Опубликованных товара.
+
+## Трассировка UJ и FR
+
+### User journeys
+
+| ID | Имя из PRD | Покрытие |
+|---|---|---|
+| UJ-1 | Анна запускает витрину для handmade-товаров за один мобильный сеанс | Key Flow UJ-1; settings, product wizard, media queue, publish success |
+| UJ-2 | Игорь переносит существующий каталог из Excel в черновики | Key Flow UJ-2; только если FR-9 входит в release |
+| UJ-3 | Мария переходит из Telegram-поста и пишет продавцу о товаре | Key Flow UJ-3; storefront, detail, Telegram handoff и fallback |
+| UJ-4 | Продавец проверяет, что сработало сегодня | Key Flow UJ-4; dashboard, zero state и analytics detail |
+| UJ-5 | Анна смотрит свою витрину глазами покупателя | Key Flow UJ-5; preview ownership и analytics exclusion |
+
+### Functional requirements
+
+| ID и имя из PRD | UX surface / контракт |
+|---|---|
+| FR-1: Seller registration and login | Seller auth, сохранённая seller session и protected-route return |
+| FR-2: Store profile editing | `settings-editor`: Профиль и О витрине |
+| FR-3: Editable public store link | `slug-editor`, uniqueness feedback и предупреждение, что старый slug даст 404 |
+| FR-4: Store preview | Preview as buyer; сохранённые данные, ownership, без публичной аналитики |
+| FR-5: Manual product creation | `product-wizard`, draft и явный publish |
+| FR-6: Product media management | `media-queue`, 1–10 фото для публикации, cover/reorder/delete/retry |
+| FR-7: Product lifecycle states | `product-state-control`: Черновик, Опубликованный, Скрытый, delete 404 |
+| FR-8: Product list management | Filtered responsive `data-row` list/table |
+| FR-9: Excel/CSV import to drafts | Условный `import-mapper`; только Черновики и построчные результаты |
+| FR-10: Public storefront rendering | Storefront без buyer auth; только Опубликованные товары |
+| FR-11: Catalog display modes | `catalog-view-toggle`; list/grid сохраняется локально |
+| FR-12: Product detail page | `product-detail-media`, полный description и mobile-visible CTA |
+| FR-13: Empty and unavailable states | Entity-specific empty, disabled и 404 patterns |
+| FR-14: Messenger configuration | Settings section Связь; только валидный Telegram username |
+| FR-15: Prefilled product-context message | Server-trusted title, price/`по запросу` и product link; editable in Telegram |
+| FR-16: CTA from catalog and product detail | Один product context на CTA; event до handoff, fallback при сбое |
+| FR-17: Seller home dashboard | Главная метрика сегодня, zero state, top source при наличии данных |
+| FR-18: Basic analytics events | Store view, product view, CTA click; preview/bots исключены |
+| FR-19: Traffic source tracking | UTM/source precedence, `unknown`, session propagation |
+| FR-20: Product-level analytics summary | Сегодня и 7 дней; views и CTA clicks без обещания purchase data |
+| FR-21: Mobile-first responsive surfaces | Полные flows на 320–430px, 44×44 targets, intentional desktop |
+| FR-22: Minimal visual language | `DESIGN.md`: warm near-white, graphite, cobalt, no glass/cardification |
 
 ## Voice and Tone
 
-Microcopy should be calm, concrete, and non-salesy. Brand posture lives in `DESIGN.md`.
+Microcopy спокойный, конкретный и честный. Brand posture живёт в `DESIGN.md`; интерфейс говорит о факте, причине и следующем действии.
 
 | Do | Don't |
 |---|---|
-| "Витрина опубликована." | "Поздравляем, ваш бизнес теперь онлайн!" |
-| "Контакт продавца пока не настроен." | "Ошибка: messenger config invalid." |
-| "Сегодня: 42 просмотра." | "Вау! Вас заметили 42 раза!" |
-| "Откроем Telegram с текстом сообщения." | "Начать сделку" |
-| "Скопировать текст сообщения" | "Fallback action" |
+| `Черновик сохранён.` | `Успешно! Всё получилось 🎉` |
+| `Не удалось загрузить фото. Файл сохранён — повторите.` | `Upload failed.` |
+| `По этим фильтрам товаров нет.` + `Сбросить фильтры` | `Ничего не найдено.` без recovery |
+| `Контакт продавца пока не настроен.` | Невалидная Telegram-ссылка |
+| `Старая ссылка перестанет работать.` | Скрыто менять slug без последствия в copy |
+| `Сегодня просмотров пока нет. Поделитесь ссылкой.` | `Ваша аналитика пуста.` |
+| `Откроем Telegram с названием, ценой и ссылкой.` | `Начать сделку` или обещание отправленного сообщения |
 
-CTA labels:
-
-- Buyer primary: `Связаться в Telegram`.
-- Catalog compact CTA: `Связаться`.
-- Seller primary setup: `Опубликовать витрину`.
-- Preview: `Посмотреть как покупатель`.
+Кнопка называет действие: `Сохранить`, `Повторить загрузку`, `Опубликовать товар`, `Удалить фотографию`. Pending label остаётся глагольным: `Сохраняем…`, `Загружаем…`; duplicate submit недоступен.
 
 ## Component Patterns
 
-Behavioral specs. Visual specs live in `DESIGN.md.Components`. Component names below are canonical implementation names; Russian UI labels are separate microcopy.
+Визуальные правила находятся в `DESIGN.md.Components`.
 
-| Component | Use | Behavioral rules |
+| Компонент | Где | Поведенческий контракт |
 |---|---|---|
-| Store header | Public storefront | Uses `{components.store-header}`. Shows photo/avatar, name, optional description/info. Description omitted cleanly when empty. |
-| Catalog view toggle | Public storefront | Uses `{components.catalog-view-toggle}`. List/grid choice persists locally per device; default grid on mobile when product photos exist. |
-| Product card | Catalog | Uses `{components.product-card}`. Tap card opens detail; tap CTA starts Telegram flow for that product. CTA must not require product detail visit. |
-| Product detail media | Product detail | Uses `{components.product-detail-media}`. Swipe/tap through photos. First photo is cover. Missing published photo is impossible by FR-6. |
-| Telegram CTA | Catalog + detail | Uses `{components.button-telegram}` when destination clarity matters, otherwise `{components.button-primary}`. Records CTA click before handoff. Opens Telegram deep link with product title, price/по запросу, product URL. |
-| Copy-message fallback | CTA failure | Uses `{components.copy-message-fallback}`. If deep link fails or is blocked, keep buyer on storefront/detail and expose prefilled message copy action. |
-| Analytics summary widget | Seller home | Uses `{components.analytics-summary-widget}`. Shows today store views as primary, plus product views, CTA clicks, and top source when available. |
-| Analytics card | Seller dashboard/detail | Uses `{components.analytics-card}`. Number + label + optional source context; no decorative chart if one number answers the question. |
-| Product state control | Product editor/list | Uses `{components.product-state-control}`. Draft, published, hidden are explicit states; publish requires seller action. |
-| Slug editor | Store setup | Uses `{components.slug-editor}`. Validates format and uniqueness before save; old slug 404 behavior belongs to product copy only if surfaced. |
-| Import mapper | Import drafts | Uses `{components.import-mapper}`. Optional; creates drafts only, never publishes automatically. |
-| Form field | Store/product editors | Uses `{components.form-field}`. Label above, helper/error below, field-level errors before page-level errors. |
-| Empty state | Dashboard/storefront/product list | Uses `{components.empty-state}`. One short explanation and one next action. |
+| `button` | Везде | Primary на surface один. Pending блокирует повторный submit и сохраняет ширину. Disabled имеет доступную причину рядом или в description. Uses `{components.button}`. |
+| `icon-button` | Rows, gallery, queue | Имеет accessible name, 44×44 target и видимый disabled state; действие не зависит от hover. Uses `{components.icon-button}`. |
+| `seller-shell` | Все seller routes | Содержит skip link, navigation и один `main`; сохраняет route context при loading/error. Uses `{components.seller-shell}`. |
+| `seller-navigation` | Seller shell | Русские labels, active `aria-current="page"`; desktop sidebar и mobile bottom bar являются одной IA. Uses `{components.seller-navigation}`. |
+| `page-header` | Route top | Один `h1`, context и до одного primary action; status не подменяет заголовок. Uses `{components.page-header}`. |
+| `section` | Settings, dashboard, detail | Группирует только связанные элементы; heading участвует в outline. Uses `{components.section}`. |
+| `toolbar` | Products, analytics | Search/filter/actions; обновление results объявляется, filter state доступен с клавиатуры. Uses `{components.toolbar}`. |
+| `data-row` | Products, analytics, import | Главная ссылка открывает сущность; lifecycle/action menu — отдельные controls. Mobile row сохраняет тот же reading order. Uses `{components.data-row}`. |
+| `status-badge` | Lifecycle, availability, files | Текстом сообщает состояние; semantic color — дополнительный сигнал. Uses `{components.status-badge}`. |
+| `metric-group` | Dashboard/analytics | Главное число = store views today; вторичные rows = product views, CTA clicks, top source. Не обещает purchase/message sent. Uses `{components.metric-group}`. |
+| `attention-list` | Dashboard | Показывает только actionable items: incomplete setup, no photo, availability. Один recovery action на строку. Uses `{components.attention-list}`. |
+| `form-field` | Все формы | Label, input, helper/error связаны через IDs; server error не очищает value. Validation выполняется на Continue/Submit, не во время обычного ввода. Uses `{components.form-field}`. |
+| `slug-editor` | Публичная ссылка | Client format check + debounced availability hint, но сервер решает uniqueness. Смена сохранённого slug требует объяснения 404 старой ссылки и подтверждения. Uses `{components.slug-editor}`. |
+| `error-summary` | Multi-field submit failure | Получает focus, перечисляет те же сообщения, что у fields, и ведёт к каждому полю. Uses `{components.error-summary}`. |
+| `feedback-banner` | Route/section error, offline | Сообщает что произошло, что сохранено и какое recovery действие доступно. Не используется для краткого success. Uses `{components.feedback-banner}`. |
+| `toast` | Noncritical success | Короткий polite status; не содержит единственный путь к данным или recovery. Uses `{components.toast}`. |
+| `native-dialog` | Delete, подтверждение смены публичного URL | Открывается `showModal()`, фон inert, Tab остаётся внутри, Escape закрывает, focus возвращается trigger. Для destructive action initial focus — `Отмена`. Modal stack максимум один. Uses `{components.native-dialog}`. |
+| `product-wizard` | Создание товара | Шаги `Основное → Продажа → Фото → Проверка`. Back/Continue сохраняют state; draft создаётся не позднее входа на Фото для `productId`. Review содержит buyer-like preview и `Изменить`. Uses `{components.product-wizard}`. |
+| `step-indicator` | Product wizard | Информационный, не заменяет Back/Continue и не является произвольной навигацией. Current item имеет `aria-current="step"`; mobile сообщает `Шаг n из 4`. Uses `{components.step-indicator}`. |
+| `media-queue` | Wizard Фото / product editor | Immediate object-URL preview; local type/size/count validation; per-file `queued/uploading/processing/success/error`; retry не теряет соседей. XHR отправляет один файл одним same-origin Route Handler request и показывает реальный browser→route byte progress. После 100% item переходит в `processing`, пока общий server service повторно проверяет signature/type/size/ownership и сохраняет metadata. Upload выполняется последовательно (`concurrency = 1`), потому что текущий order RPC требует безопасной очередности. Fake progress запрещён. Cover = position 0; drag optional, Up/Down обязательны. Uses `{components.media-queue}`. |
+| `settings-editor` | Store settings/setup | Sections `Профиль / Публичная ссылка / Связь / О витрине`. Desktop inline preview отражает local form state и отмечает unsaved; mobile preview — отдельная команда. Save/Discard bar существует только при dirty state. Uses `{components.settings-editor}`. |
+| `store-header` | Storefront/preview | Avatar, title, optional descriptions; пустые поля схлопываются. Preview indicator seller-only. Uses `{components.store-header}`. |
+| `catalog-view-toggle` | Storefront | List/grid имеет `aria-pressed`; выбор сохраняется локально и не меняет состав товаров. Uses `{components.catalog-view-toggle}`. |
+| `product-card` | Catalog | Card link открывает detail; отдельный CTA запускает handoff именно этого товара. В grid/list доступны одинаковые данные. Uses `{components.product-card}`. |
+| `product-detail-media` | Product detail/preview | Swipe + видимые Previous/Next; counter и thumbnail selection; cover первая. Position объявляется как `Фото n из total: title`. Uses `{components.product-detail-media}`. |
+| `telegram-cta` | Catalog/detail | Запрашивает server-trusted handoff, фиксирует CTA best-effort до внешнего перехода и не блокируется ошибкой analytics. Uses `{components.telegram-cta}`. |
+| `copy-message-fallback` | Handoff failure | Остаётся на текущем товаре, показывает тот же server-trusted message и `Скопировать текст сообщения`; альтернативные контакты не добавляются. Uses `{components.copy-message-fallback}`. |
+| `skeleton` | Cold route/data load | Повторяет конечную структуру, container получает `aria-busy`; декоративные shapes скрыты от screen reader. Uses `{components.skeleton}`. |
+| `empty-state` | Dashboard/list/storefront/search | Различает first-use, no data и no results; объясняет причину и даёт один следующий action. Uses `{components.empty-state}`. |
+| `import-mapper` | Conditional FR-9 | File → mapping → row preview → drafts; частичная ошибка не отменяет успешные rows. Не публикует автоматически. Uses `{components.import-mapper}`. |
+| `product-state-control` | Product editor/list | Save fields не меняет lifecycle. Publish/hide/delete — отдельные команды; publish guard проверяет обязательные data и 1–10 valid photos. Uses `{components.product-state-control}`. |
 
 ## State Patterns
 
-| State | Surface | Treatment |
+### Surface states
+
+| Surface / состояние | Treatment и recovery |
+|---|---|
+| Seller auth pending | Кнопка `Отправляем ссылку…`; email остаётся видимым, повтор недоступен до завершения |
+| Seller auth success/error | Success сообщает следующий шаг; error сохраняет email и даёт повтор без смены auth-модели |
+| First seller login | Setup health + `Создать витрину`; аналитический chrome не изображает несуществующие данные |
+| Dashboard cold load | Structure-matched `skeleton`; navigation и `h1` стабильны |
+| No analytics today | Ноль как честное значение + `Поделиться ссылкой`; не error |
+| Dashboard refresh error | Не подменять ошибку нулевыми метриками; показать contextual warning и локальный retry |
+| Product list first-use | `Добавьте первый товар` + один CTA |
+| Product filter empty | `По этим фильтрам товаров нет` + `Сбросить фильтры`; не first-use copy |
+| Product list load error | Local banner + `Повторить`; не показывать empty вместо ошибки |
+| Wizard draft | Draft state и время сохранения видимы; создание draft не публикует товар |
+| Wizard validation failure | Inline errors + focused `error-summary`; текущий шаг остаётся открыт, values сохранены |
+| Wizard save failure | Values и current step сохранены; retry только текущей mutation |
+| Product draft missing photo | Draft разрешён; publish disabled с объяснением `Добавьте хотя бы одно фото` |
+| File rejected locally | Unsupported type, >6 MiB или превышение 10 не входит в upload queue; valid соседние files сохраняются |
+| File `queued` | Thumbnail виден сразу; text status `В очереди` |
+| File `uploading` | Реальный determinate browser→route byte progress; общий count показывает завершённые items `N из M` |
+| File `processing` | Передано 100%; text status `Обрабатываем…`, пока сервер проверяет и сохраняет файл; не изображать этот этап как дополнительный byte-percent |
+| File `success` | Text status `Загружено`, item persisted, общий count обновлён |
+| File `error` | File object и thumbnail сохранены; причина + `Повторить`; успешные соседние files не повторяются |
+| Saved photo delete | `native-dialog` с thumbnail/name; после confirm очередь и cover пересчитываются, focus возвращается в логичный соседний control |
+| Dirty settings | Save/Discard bar; navigation away предупреждает только при реальной потере unsaved state |
+| Slug taken/invalid | Inline error у `slug-editor`; другие settings values не теряются |
+| Saved slug change | До commit показать, что old URL вернёт 404; cancel возвращает focus и сохраняет form state |
+| Store profile incomplete | Dashboard attention item ведёт прямо в незаполненную section |
+| Storefront cold load | Store header/product geometry skeleton; без spinner-only page |
+| No published products | Public empty store message; route остаётся 200 |
+| Missing store / product | Разные 404 copy; не раскрывать draft/hidden/foreign entity |
+| Telegram not configured | Disabled CTA с текстом причины; seller получает setup task |
+| Telegram handoff error | `copy-message-fallback`; покупатель остаётся на том же product context |
+| Seller preview | Visible seller-only preview indicator; views и CTA не пишутся как public analytics |
+| Offline seller mutation | Сохранить текущий view/form; banner сообщает, что publish/upload ждёт соединения, и даёт retry |
+| Conditional import partial success | Успешные rows становятся Черновиками, ошибочные rows остаются с локальной причиной |
+
+### Feedback taxonomy
+
+| Сигнал | Когда | Семантика / focus |
 |---|---|---|
-| First seller login | Dashboard | Empty dashboard with primary CTA `Создать витрину`. No analytics chrome before store exists. |
-| Cold storefront load | Public storefront/product detail | Skeleton matches final layout; no spinner-only screen. |
-| Cold dashboard load | Seller dashboard | Skeleton analytics cards preserve layout and avoid metric jumps. |
-| Store profile incomplete | Dashboard/setup | Checklist: store name, slug, Telegram, first product. |
-| No published products | Public storefront | Empty store message. Store may exist, but catalog is empty. |
-| First product published | Seller success | Show public link, `Посмотреть как покупатель`, and `Добавить товар`. |
-| Activation target not met | Seller dashboard | Encourage adding products until 3 published; do not block public link after first product. |
-| Product draft missing photo | Product editor | Draft can save; publish disabled until at least one photo. |
-| Product save failed | Product editor | Keep local form values, show field/page error, allow retry. |
-| Telegram not configured | Public storefront/product | CTA disabled: `Контакт продавца пока не настроен`. |
-| Telegram deep link failed | Buyer CTA | Show copy-message fallback; do not show alternative contacts in MVP. |
-| No analytics today | Seller dashboard | Zero state + prompt to share link. |
-| Unknown source | Analytics | Label as `unknown`; never hide event count. |
-| Seller preview | Preview as buyer | Badge/indicator for seller only; analytics not counted. |
-| Known bot/crawler | Analytics | Excluded from seller-visible analytics. |
-| Network offline | Seller editor/dashboard | Preserve current view; show text-first non-blocking notice. Publishing waits for reconnect. |
+| Inline field error | Ошибка одного значения | `aria-invalid`, `aria-describedby`; focus не перемещается во время ввода |
+| `error-summary` | Submit/Continue с несколькими ошибками | `role="alert"` или эквивалентная объявляемая область; программный focus и links к fields |
+| `feedback-banner` | Route/section load error, offline, permission/unavailable | Контекстный alert/status с recovery; modal не используется |
+| Polite status | Upload milestones, processing, batch count, save/reorder complete | `role="status"`; объявлять значимые изменения один раз без переноса focus |
+| `toast` | Короткий noncritical success | Polite, auto-dismiss только если сообщение не нужно для действия |
+| `native-dialog` | Необратимое или link-breaking решение | Focus containment, Escape, Cancel initial focus, return focus |
+| `skeleton` | Initial structure load | `aria-busy` на container; shapes `aria-hidden`, после load объявить готовый region при необходимости |
 
 ## Interaction Primitives
 
-- Tap is the primary interaction. No hover-only controls.
-- Bottom sheets may be used for compact seller actions, but modal stacks must never exceed one level.
-- Product photos use horizontal swipe or visible next/previous affordances; photo count must be perceivable.
-- Forms autosave only when the result is obvious; publish, delete, hide, and slug change require explicit action.
-- Destructive actions require confirmation: delete product, change slug if public link already exists.
-- Pull-to-refresh may appear on seller analytics; buyer storefront should simply load current data.
-- Banned in MVP: infinite catalog feed, buyer login prompts, chat UI, cart UI, order status UI, review UI.
+- Tap/click — основной input; никакого hover-only action.
+- Browser Back и видимая `Назад` в wizard сохраняют текущие данные. Stepper не кликабелен как произвольный shortcut.
+- Product fields autosave только как Черновик и только с ясным status. Publish, hide, delete и смена сохранённого slug требуют явного действия.
+- File picker и dropzone эквивалентны. Выбор сразу создаёт preview; object URLs освобождаются при remove/unmount.
+- Единственное нормативное определение upload transport, progress и последовательности находится в контракте `media-queue` раздела Component Patterns выше; interaction layer не переопределяет его.
+- Drag reorder допускается как ускорение на desktop. Кнопки `Выше/ниже` или `Переместить на позицию` доступны клавиатуре и touch всегда; после действия polite status сообщает новую позицию.
+- Удаление local queued file до сохранения не требует modal; удаление persisted photo/product требует `native-dialog`.
+- Modal stack не превышает один уровень. Browser-native `alert`, `confirm`, `prompt` запрещены.
+- Gallery поддерживает swipe, buttons и thumbnail selection; конец списка не зацикливается без явного решения.
+- Telegram handoff использует текущий product context. Analytics failure не блокирует deep link или copy fallback.
+- Banned в MVP: infinite feed, cart, checkout, order status, internal chat, buyer login, reviews и alternative contact UI.
 
 ## Accessibility Floor
 
-Behavioral floor; visual contrast lives in `DESIGN.md`.
-
-- All primary tap targets are at least 44x44 CSS px.
-- Focus order follows visible reading order.
-- Product gallery images announce position and product context: `Фото {n} из {total}: {product title}`. Seller-provided alt text is post-MVP.
-- Product gallery controls announce previous/next photo and disabled/end states.
-- CTA announces destination: "Связаться в Telegram с продавцом".
-- Disabled CTA uses actual disabled/`aria-disabled` semantics and announces the cause: "Контакт продавца пока не настроен".
-- Catalog view toggle announces current state: list or grid.
-- Analytics cards expose number + label together to screen readers; top-source example: "Просмотры магазина сегодня: 42. Лучший источник: Telegram."
-- Reduce Motion disables glass-panel motion/blur transitions; no information conveyed by motion alone.
-- Reduced transparency / high-contrast modes use the solid glass fallback from `{components.glass-panel}` / `{colors.surface-raised}`.
-- Empty states and validation errors are text-first, not color-only.
+- WCAG 2.2 AA для seller и buyer core flows.
+- На каждом route один логичный `h1`, skip link к `main`, landmarks и document title с текущей сущностью.
+- Tab order совпадает с visual order. Active seller navigation использует `aria-current="page"`; wizard — `aria-current="step"`.
+- Все primary и icon touch targets не меньше 44×44 CSS px.
+- Reflow без horizontal page scroll при 320 CSS px/400% zoom; обязательные device checks — 320, 360, 390, 412 и 430px.
+- Visible focus использует `{colors.accent-cobalt}` и не закрывается sticky navigation/savebar. Layout резервирует высоту fixed controls и применяет scroll padding.
+- Mobile fixed surfaces используют `padding-bottom: calc(base + env(safe-area-inset-bottom))`.
+- `form-field` связывает label/helper/error; `error-summary` получает focus только после failed Continue/Submit и не дублирует screen-reader announcement бесконечно.
+- `native-dialog`: `showModal()`, inert background, Tab/Shift+Tab внутри, Escape, видимая Cancel, return focus. Destructive action не получает initial focus.
+- `media-queue`: input имеет label/constraints; file status и общий count доступны без цвета; screen reader получает milestones и переход `100% → Обрабатываем → Загружено`, а не каждый progress tick.
+- Reorder доступен без drag; после перемещения объявляются номер фото, прежняя и новая позиция.
+- Gallery image label: `Фото {n} из {total}: {product title}`; controls сообщают previous/next и disabled/end state.
+- Status, availability, cover и errors не передаются только цветом.
+- Skeleton не создаёт речевой шум; loading container использует `aria-busy`.
+- При `prefers-reduced-motion: reduce` отключаются transform transitions, smooth scroll и shimmer. Determinate progress обновляет ширину без декоративной анимации; `processing` всегда имеет текстовый status.
+- Public CTA на mobile не перекрывает description/facts и остаётся reachable при zoom и virtual keyboard.
 
 ## Responsive & Platform
 
-| Viewport | Behavior |
-|---|---|
-| 360–430px | Primary MVP layout. One-column seller flows; buyer grid supports two compact cards per row. |
-| 431–767px | Same IA; slightly wider cards and media. |
-| 768px+ | Public storefront may center content in a narrow column; seller dashboard may use two columns for analytics cards. |
+| Viewport | Seller behavior | Buyer behavior |
+|---|---|---|
+| 320–430px | Одна колонка; bottom navigation; compact `Шаг n из 4`; media rows stack; settings preview отдельной командой; safe-area action bars | Две catalog cards в grid, list alternative; media сверху; contextual CTA в первом экране или safe sticky zone |
+| 431–767px | Та же IA, больше whitespace; toolbar переносится; table остаётся rows | Более широкие cards/media, без desktop-only identity rail |
+| 768–1023px | Bottom/top compact navigation по доступной ширине; dashboard и settings могут использовать две колонки без fixed preview | Storefront centered/fluid; product detail может стать split, если reading order сохраняется |
+| 1024–1279px | Постоянный sidebar; full-width rows/table; settings form + preview при достаточной ширине | Editorial split; gallery controls видимы без hover |
+| 1280px+ | Dashboard summary + attention columns, wide product index, max рабочей области около 1440–1600px | Large media + details; related products ниже, не marketplace feed |
 
-The product is responsive web, not native mobile in MVP. It may be installed or bookmarked like a PWA later, but PWA install prompts are not MVP UX.
+Responsive web не имитирует native app и не добавляет PWA prompts в MVP. Mobile navigation и desktop sidebar — разные представления одной IA, а не разные продукты.
 
 ## Inspiration & Anti-patterns
 
-- **Lifted from link-in-bio tools:** one public link and fast sharing.
-- **Lifted from classifieds/product boards:** direct product card -> contact action.
-- **Lifted from Instagram post analytics:** lightweight source/action feedback, but only with honest observable events.
-- **Rejected — marketplace feed:** no global discovery, no seller aggregation, no marketplace ranking.
-- **Rejected — heavy store builder:** no deep themes, no blocks marketplace, no layout rabbit hole in MVP.
-- **Rejected — internal chat:** conversation happens in Telegram for MVP.
+Визуальные источники описаны в `RESEARCH.md` и не являются поведенческими стандартами.
+
+- Из Linear берётся дисциплина внимания: главный content доминирует, navigation отступает.
+- Из Vercel Geist и Carbon Grid берутся роли surface/border/text, tight alignment и 8px foundation.
+- Из Optimus берутся numbered sections и editorial-tech tension, но не marquee, pale copy, excessive whitespace или scroll effects.
+- Из link-in-bio tools сохраняется одна публичная ссылка; из classifieds — direct product-to-contact path; из social analytics — только наблюдаемые events.
+
+Отклонено: marketplace feed, store-builder blocks, decorative analytics charts, click-through stepper, drag-only reorder, error modal, fake progress, automatic dark theme, glassmorphism, buyer account и internal chat.
 
 ## Key Flows
 
-### Flow 1 — Seller first launch (Анна, handmade lamps, phone in hand)
+### UJ-1 — Анна запускает витрину для handmade-товаров за один мобильный сеанс
 
-1. Анна registers/logs in.
-2. Empty dashboard shows `Создать витрину`.
-3. She adds store name, photo, optional description, slug, and Telegram.
-4. She adds first product: title, price, description, at least one photo.
-5. She publishes product.
-6. System shows public link, preview, and add-product action.
-7. **Climax:** Анна opens preview and sees a public storefront that looks ready to share.
+1. Анна входит по magic link с телефона.
+2. Setup dashboard предлагает `Создать витрину`.
+3. В settings sections она заполняет название, avatar, описание, slug и Telegram; занятый slug исправляется inline без потери полей.
+4. Анна нажимает `Добавить товар` и проходит `Основное`, затем `Продажа`.
+5. Перед шагом `Фото` система сохраняет Черновик и получает `productId`.
+6. Анна выбирает фотографии; previews появляются сразу. Один неудачный файл остаётся в очереди, Анна нажимает `Повторить`, затем явно выбирает обложку.
+7. На `Проверке` Анна видит buyer-like preview, возвращается через `Изменить` при необходимости и нажимает `Опубликовать товар`.
+8. После первого Опубликованного товара система показывает public link, `Посмотреть как покупатель` и `Добавить товар`.
+9. Анна повторяет короткий product flow до трёх товаров — activation threshold, не условие публичности.
+10. **Climax:** Анна открывает опубликованную ссылку и видит готовую к распространению Витрину с тремя товарами.
 
-Failure: slug taken -> inline validation; no entered store/product content is lost.
+Failure: save/upload/network error сохраняет form values, queue и Черновик; recovery относится только к неудавшемуся шагу/файлу.
 
-### Flow 2 — Buyer contact from Telegram post (Мария, browsing from a phone)
+### UJ-2 — Игорь переносит существующий каталог из Excel в черновики
 
-1. Мария taps seller link from Telegram.
-2. Public storefront opens with store header and catalog.
-3. She switches to grid, opens a dress card, views photos and price.
-4. She taps `Связаться в Telegram`.
-5. CTA click is recorded.
-6. Telegram opens with prefilled product-context message.
-7. **Climax:** Мария can send a useful first message without retyping product context.
+Этот flow действует только если FR-9 включён в release.
 
-Failure: Telegram deep link fails -> she remains on the product page and can copy the message text.
+1. Игорь открывает `Товары → Импорт` и выбирает Excel/CSV.
+2. Система распознаёт или просит сопоставить колонки.
+3. Игорь проверяет row preview; unsupported optional fields не блокируют остальные строки.
+4. Система создаёт только Черновики и показывает построчный результат.
+5. Игорь открывает incomplete drafts, добавляет фотографии и вручную публикует выбранные товары.
+6. **Climax:** существующий каталог превращён в проверяемые Черновики без ручного повторного ввода.
 
-### Flow 3 — Seller checks today's signal (Анна, evening)
+Failure: нераспознанный файл получает понятную причину и шаблон; частичная row error не откатывает успешные drafts.
 
-1. Анна opens seller dashboard.
-2. Summary shows today's store views as primary metric.
-3. Secondary cards show product views, CTA clicks, and top source if available.
-4. She taps product analytics to see which product drew interest.
-5. **Climax:** Анна decides whether to repost the link or improve a product card.
+### UJ-3 — Мария переходит из Telegram-поста и пишет продавцу о товаре
 
-Empty: no views today -> dashboard suggests sharing the store link.
+1. Мария открывает public store link из Telegram без регистрации.
+2. Она видит store header и каталог, переключает list/grid при желании.
+3. Мария открывает Карточку товара и просматривает фото, цену, availability и description.
+4. Она нажимает `Связаться о товаре`; accessible name уточняет товар и Telegram.
+5. Сервер строит message из доверенных title, price/`по запросу` и permalink; CTA event записывается best-effort.
+6. Telegram открывается с редактируемым предзаполненным сообщением.
+7. **Climax:** Мария может отправить продавцу точный товарный контекст без повторного ввода.
 
-### Flow 4 — Optional import to drafts (Игорь, small clothes seller)
+Failure: deep link не открылся — Мария остаётся на Карточке товара и копирует тот же текст; alternative contacts не появляются.
 
-1. Игорь opens Product list and chooses import.
-2. Uploads Excel/CSV.
-3. Maps columns or accepts recognized fields.
-4. System creates drafts, not published products.
-5. Игорь reviews drafts, adds missing photos, and publishes selected products.
-6. **Climax:** existing catalog becomes editable drafts without manual re-entry.
+### UJ-4 — Продавец проверяет, что сработало сегодня
 
-Failure: file not recognized -> show reason and a downloadable/visible table template.
+1. Анна вечером открывает seller dashboard.
+2. Главное число показывает Просмотры магазина за сегодня по Europe/Moscow.
+3. Вторичные rows показывают product views, CTA clicks и лучший источник при наличии source data.
+4. Анна открывает analytics detail за сегодня или 7 дней и видит product-level summary.
+5. Attention queue показывает только задачи, которые можно исправить сейчас.
+6. **Climax:** Анна понимает, какой товар и источник дали интерес, и решает обновить карточку или снова поделиться ссылкой.
 
-### Flow 5 — Preview as buyer (Анна, before sharing the link)
+Empty/failure: без данных dashboard показывает честный zero state; при refresh error не изображает нули как успешную загрузку и предлагает retry.
 
-1. Анна opens seller dashboard after publishing at least one product.
-2. She taps `Посмотреть как покупатель`.
-3. Preview opens using the public storefront layout with a seller-only preview indicator.
-4. She opens a product card, checks photos, price, description, and Telegram CTA state.
-5. She returns to seller mode.
-6. **Climax:** Анна trusts the public link enough to copy it into social profiles.
+### UJ-5 — Анна смотрит свою витрину глазами покупателя
 
-Failure: preview shows an issue -> Анна returns to product/store editor; preview views and CTA taps are not counted in analytics.
+1. Анна открывает `Предпросмотр` из dashboard или settings.
+2. Preview требует seller auth/ownership и показывает сохранённую публичную структуру с seller-only indicator.
+3. Она открывает товар, проверяет gallery, description, price, availability и Telegram CTA state.
+4. Preview actions не создают public view или CTA analytics events.
+5. Анна возвращается к нужной settings/product section либо копирует public link.
+6. **Climax:** Анна доверяет публичной ссылке, потому что увидела её в реальном buyer reading order.
 
-## UX Decisions and Follow-ups
+Failure: найденная проблема возвращает Анну в соответствующий editor; unsaved settings не теряются без предупреждения.
 
-- **Decision:** Default public catalog view is grid on mobile when product photos exist, because photos are load-bearing for purchase intent.
-- **Decision:** Telegram CTA may use Telegram blue only where destination clarity matters; otherwise primary black button is acceptable.
-- **Spine-only coverage accepted for now:** Product detail and product editor are specified by spine tables. Add mockups only if implementation review finds layout ambiguity.
-- [NOTE FOR UX] Product URL/permalink behavior is an architecture decision, but UX must design copy for deleted/hidden product links.
+## Неблокирующие implementation decisions
+
+- TUS не требуется текущему UX; актуальный transport целиком задаётся единственным контрактом `media-queue` в Component Patterns.
+- Точный формат product permalink остаётся архитектурным контрактом; UX требует стабильную ссылку в Telegram message и entity-specific 404.
+- Роль root `/` не определена PRD: реализация должна убрать smoke-test presentation, но выбор landing или redirect не должен расширять MVP.
+- FR-9 release decision остаётся PM/release gate; UX готов для conditional surface, но не делает import обязательным.

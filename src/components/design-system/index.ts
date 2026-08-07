@@ -1,1 +1,1 @@
-export { GlassPanel } from "./surface";
+export { Section, Surface } from "./surface";

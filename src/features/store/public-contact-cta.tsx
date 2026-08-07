@@ -8,6 +8,7 @@ import { getPublicAttributionHints } from "@/features/analytics/source-attributi
 type PublicProductContactCtaProps = {
   storeSlug: string;
   productId: string;
+  productTitle?: string;
   contactConfigured?: boolean;
   isPreview?: boolean;
   className?: string;
@@ -16,6 +17,7 @@ type PublicProductContactCtaProps = {
 export function PublicProductContactCta({
   storeSlug,
   productId,
+  productTitle,
   contactConfigured = false,
   isPreview = false,
   className,
@@ -25,6 +27,28 @@ export function PublicProductContactCta({
   >("idle");
   const [preparedMessage, setPreparedMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const visibleButtonLabel =
+    status === "pending"
+      ? "Готовим Telegram…"
+      : contactConfigured
+        ? productTitle
+          ? "Связаться о товаре"
+          : "Связаться в Telegram"
+        : "Контакт продавца пока не настроен";
+  const accessibleButtonLabel =
+    status !== "pending" && contactConfigured && productTitle
+      ? `Связаться о товаре «${productTitle}» в Telegram`
+      : undefined;
+  const statusAnnouncement =
+    status === "pending"
+      ? "Готовим обращение в Telegram."
+      : status === "ready"
+        ? "Обращение подготовлено. Если Telegram не открылся, скопируйте сообщение ниже."
+        : status === "copied"
+          ? "Сообщение скопировано."
+          : status === "copy-error" || status === "error"
+            ? errorMessage
+            : "";
 
   async function handleContactClick() {
     if (!contactConfigured || status === "pending") return;
@@ -118,27 +142,24 @@ export function PublicProductContactCta({
   return (
     <div className="space-y-2">
       <Button
-        aria-label={
-          contactConfigured
-            ? "Связаться с продавцом в Telegram"
-            : "Контакт продавца пока не настроен"
-        }
-        className={className}
+        aria-busy={status === "pending"}
+        aria-label={accessibleButtonLabel}
+        className={`h-auto min-h-11 whitespace-normal break-words py-2.5 text-center disabled:opacity-100 ${className ?? ""}`}
         data-contact-product-id={productId}
         data-contact-store-slug={storeSlug}
         disabled={!contactConfigured || status === "pending"}
         onClick={handleContactClick}
         variant={contactConfigured ? "telegram" : "secondary"}
       >
-        {status === "pending"
-          ? "Готовим Telegram…"
-          : contactConfigured
-            ? "Связаться в Telegram"
-            : "Контакт продавца пока не настроен"}
+        {visibleButtonLabel}
       </Button>
 
+      <p aria-atomic="true" aria-live="polite" className="sr-only" role="status">
+        {statusAnnouncement}
+      </p>
+
       {preparedMessage ? (
-        <div className="space-y-2 rounded-2xl border border-border bg-surface-raised p-3 text-sm leading-6">
+        <div className="space-y-2 rounded-md border border-border-strong bg-surface-raised p-4 text-sm leading-6">
           <p>
             Telegram должен открыть чат с подготовленным текстом. Если этого не
             произошло, скопируйте сообщение:
@@ -154,7 +175,7 @@ export function PublicProductContactCta({
           >
             Скопировать текст сообщения
           </Button>
-          <p aria-live="polite" className="text-xs text-foreground/65">
+          <p className="text-xs text-foreground/65">
             {status === "copied"
               ? "Сообщение скопировано."
               : status === "copy-error"
@@ -165,7 +186,7 @@ export function PublicProductContactCta({
       ) : null}
 
       {status === "error" ? (
-        <p aria-live="polite" className="text-sm text-foreground/70">
+        <p className="text-sm text-foreground/70">
           {errorMessage}
         </p>
       ) : null}

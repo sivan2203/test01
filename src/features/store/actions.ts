@@ -10,10 +10,14 @@ import {
   validateStoreAvatarFile,
   validateStoreAvatarSignature,
 } from "./avatar";
-import type { StoreProfileFormState } from "./form-state";
+import type {
+  StoreProfileFormState,
+  StoreSlugAvailabilityResult,
+} from "./form-state";
 import {
   normalizeOptionalStoreText,
   STORE_DEFAULT_TIMEZONE,
+  validateStoreSlug,
   validateStoreProfileValues,
 } from "./schema";
 
@@ -21,6 +25,8 @@ const AVATAR_RESELECT_MESSAGE =
   "Выберите фото ещё раз после исправления полей.";
 const SLUG_TAKEN_MESSAGE =
   "Такая ссылка уже занята. Попробуйте другой вариант.";
+const SLUG_AVAILABILITY_ERROR_MESSAGE =
+  "Не удалось проверить ссылку. Попробуйте ещё раз.";
 
 type SupabaseErrorLike = {
   code?: string;
@@ -42,6 +48,92 @@ function getFieldErrorsWithAvatarReselect(
     ...fieldErrors,
     avatar: AVATAR_RESELECT_MESSAGE,
   };
+}
+
+export async function checkStoreSlugAvailability(
+  candidate: unknown,
+): Promise<StoreSlugAvailabilityResult> {
+  const candidateValue = typeof candidate === "string" ? candidate : "";
+  const validation = validateStoreSlug(candidateValue, { allowEmpty: false });
+
+  if (!validation.isValid) {
+    return {
+      status: "invalid",
+      slug: validation.slug,
+      message: validation.error,
+    };
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return {
+        status: "error",
+        slug: validation.slug,
+        message: SLUG_AVAILABILITY_ERROR_MESSAGE,
+      };
+    }
+
+    const { data: currentStore, error: currentStoreError } = await supabase
+      .from("stores")
+      .select("slug")
+      .eq("seller_id", user.id)
+      .maybeSingle<{ slug: string | null }>();
+
+    if (currentStoreError) {
+      return {
+        status: "error",
+        slug: validation.slug,
+        message: SLUG_AVAILABILITY_ERROR_MESSAGE,
+      };
+    }
+
+    if (currentStore?.slug === validation.slug) {
+      return {
+        status: "current",
+        slug: validation.slug,
+        message: "Это текущая публичная ссылка магазина.",
+      };
+    }
+
+    const { data: isAvailable, error: availabilityError } = await supabase.rpc(
+      "is_store_slug_available",
+      { candidate_slug: validation.slug },
+    );
+
+    if (availabilityError || typeof isAvailable !== "boolean") {
+      return {
+        status: "error",
+        slug: validation.slug,
+        message: SLUG_AVAILABILITY_ERROR_MESSAGE,
+      };
+    }
+
+    if (!isAvailable) {
+      return {
+        status: "unavailable",
+        slug: validation.slug,
+        message: "Эта ссылка недоступна. Попробуйте другой вариант.",
+      };
+    }
+
+    return {
+      status: "available",
+      slug: validation.slug,
+      message: "Ссылка свободна.",
+    };
+  } catch {
+    return {
+      status: "error",
+      slug: validation.slug,
+      message: SLUG_AVAILABILITY_ERROR_MESSAGE,
+    };
+  }
 }
 
 export async function saveStoreProfile(

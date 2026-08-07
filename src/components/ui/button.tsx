@@ -4,21 +4,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-md border border-transparent text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+        primary: "bg-primary text-primary-foreground hover:bg-[#1948cf]",
         secondary:
-          "border border-border bg-surface-raised text-foreground hover:bg-muted",
+          "border-border-strong bg-surface-raised text-foreground hover:bg-surface-muted",
         telegram:
-          "bg-telegram text-white hover:bg-telegram/90",
-        ghost: "text-foreground hover:bg-muted",
+          "bg-primary text-primary-foreground hover:bg-[#1948cf]",
+        ghost: "text-foreground hover:bg-surface-muted",
+        destructive:
+          "border-destructive/45 bg-surface-raised text-destructive hover:bg-destructive-surface",
       },
       size: {
         default: "h-11 px-5",
         compact: "h-11 px-4",
-        lg: "h-12 px-6 text-base",
+        lg: "min-h-12 px-6 text-base",
       },
     },
     defaultVariants: {

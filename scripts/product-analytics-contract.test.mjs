@@ -213,8 +213,10 @@ test("analytics detail route keeps periods explicit and excludes public/raw anal
   assert.match(view, /Сегодня/);
   assert.match(view, /productViews/);
   assert.match(view, /ctaClicks/);
-  assert.match(view, /periodLabel=\{periodLabel\}/);
-  assert.match(view, /Период: \{periodLabel\}/);
+  assert.match(view, /activePeriod/);
+  assert.match(view, /aria-current=\{active \? "page" : undefined\}/);
+  assert.match(view, /Сводка за период: \$\{periodLabel\}/);
+  assert.match(view, /Период: \$\{periodLabel\}/);
   assert.match(view, /break-words/);
   assert.match(view, /min-h-11/);
   assert.doesNotMatch(view, /30 дней/);
@@ -226,10 +228,10 @@ test("product analytics surface preserves zero, empty, retry, and aggregate-only
     "utf8",
   );
 
-  assert.match(view, /role="alert"/);
+  assert.match(view, /<Alert[^>]*tone="danger"/);
   assert.match(view, /Обновить/);
-  assert.match(view, /role="status"/);
-  assert.match(view, /value/);
+  assert.match(view, /<EmptyState/);
+  assert.match(view, /totalViews/);
   assert.match(view, /aria-label/);
   assert.match(view, /Последние 7 дней/);
   assert.doesNotMatch(view, /occurred_at|referrer|buyer_identity|session_id/);

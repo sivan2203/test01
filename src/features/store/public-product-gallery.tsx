@@ -28,7 +28,7 @@ export function PublicProductGallery({
     return (
       <div
         aria-label={"Фото товара: " + productTitle + ". Нет фото"}
-        className="flex aspect-square items-center justify-center rounded-2xl border border-dashed border-border bg-surface-muted px-6 text-center text-sm text-foreground/60"
+        className="flex aspect-square items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-muted px-6 text-center text-sm text-ink-secondary"
         role="img"
       >
         Нет фото
@@ -78,9 +78,9 @@ export function PublicProductGallery({
   }
 
   return (
-    <section aria-label={"Галерея товара: " + productTitle} className="space-y-3">
+    <section aria-label={"Галерея товара: " + productTitle} className="min-w-0 space-y-3">
       <div
-        className="relative overflow-hidden rounded-2xl border border-border bg-surface-muted"
+        className="relative overflow-hidden rounded-md border border-border bg-surface-muted"
         onTouchCancel={handleTouchCancel}
         onTouchEnd={handleTouchEnd}
         onTouchStart={handleTouchStart}
@@ -97,19 +97,19 @@ export function PublicProductGallery({
       <div className="flex items-center justify-between gap-3">
         <button
           aria-label="Предыдущая фотография"
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border bg-surface-raised text-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm border border-border-strong bg-surface-raised text-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
           disabled={renderIndex === 0}
           onClick={() => setIndex(renderIndex - 1)}
           type="button"
         >
           ‹
         </button>
-        <p aria-live="polite" className="text-sm text-foreground/65">
+        <p aria-live="polite" className="font-mono text-xs text-ink-secondary">
           Фото {renderIndex + 1} из {total}
         </p>
         <button
           aria-label="Следующая фотография"
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border bg-surface-raised text-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm border border-border-strong bg-surface-raised text-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
           disabled={renderIndex === total - 1}
           onClick={() => setIndex(renderIndex + 1)}
           type="button"
@@ -136,8 +136,10 @@ export function PublicProductGallery({
               }
               aria-pressed={renderIndex === index}
               className={cn(
-                "min-h-11 min-w-11 rounded-xl border-2 p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                renderIndex === index ? "border-ring" : "border-border",
+                "relative min-h-11 min-w-11 rounded-xl border-2 p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                renderIndex === index
+                  ? "border-foreground ring-1 ring-foreground ring-offset-1"
+                  : "border-border",
               )}
               key={item.id}
               onClick={() => setIndex(index)}
@@ -150,6 +152,14 @@ export function PublicProductGallery({
                 fallbackLabel="Нет фото"
                 src={item.url}
               />
+              {renderIndex === index ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-[0.625rem] font-bold text-background"
+                >
+                  ✓
+                </span>
+              ) : null}
             </button>
           ))}
         </div>

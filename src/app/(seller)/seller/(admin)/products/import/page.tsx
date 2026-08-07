@@ -1,13 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { GlassPanel } from "@/components/design-system";
+import { Alert } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ImportProductFlow } from "@/features/import/import-product-flow";
 import { getCurrentSellerStoreProfile } from "@/features/store/queries";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Импорт товаров" };
 
 export default async function ProductImportPage() {
   const storeResult = await getCurrentSellerStoreProfile();
@@ -18,46 +21,37 @@ export default async function ProductImportPage() {
 
   if (storeResult.status === "not_found") {
     return (
-      <main>
-        <GlassPanel className="p-5">
-          <p className="text-sm text-foreground/60">Импорт товаров</p>
-          <h1 className="mt-2 text-2xl font-semibold">Сначала создайте витрину</h1>
-          <p className="mt-3 text-sm leading-6 text-foreground/70">
-            Импортированные черновики должны принадлежать вашей витрине. Создайте её, затем вернитесь к импорту.
-          </p>
-          <Link className={cn(buttonVariants(), "mt-5 w-full")} href="/seller/store">
-            Создать витрину
-          </Link>
-        </GlassPanel>
-      </main>
+      <EmptyState
+        action={<Link className={buttonVariants()} href="/seller/store">Создать витрину</Link>}
+        description="Импортированные черновики должны принадлежать витрине. Создайте её, затем вернитесь к импорту."
+        eyebrow="ИМПОРТ / НУЖЕН МАГАЗИН"
+        title="Сначала создайте витрину"
+        titleAs="h1"
+      />
     );
   }
 
   if (storeResult.status === "error") {
     return (
-      <main>
-        <GlassPanel className="p-5" role="alert">
-          <h1 className="text-2xl font-semibold">Не удалось загрузить витрину</h1>
-          <p className="mt-3 text-sm leading-6 text-foreground/70">
-            Обновите страницу и попробуйте открыть импорт ещё раз.
-          </p>
-        </GlassPanel>
-      </main>
+      <Alert titleAs="h1" tone="danger" title="Не удалось загрузить витрину">
+        Обновите страницу и попробуйте открыть импорт ещё раз.
+      </Alert>
     );
   }
 
   return (
-    <main className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-col gap-7">
+      <header className="flex flex-col gap-4 border-b border-border-strong pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-foreground/60">Товары</p>
-          <h1 className="mt-1 text-2xl font-semibold">Импорт товаров</h1>
+          <p className="font-mono text-xs text-primary">ТОВАРЫ / ИМПОРТ</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">Импорт товаров</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-secondary">Проверьте структуру файла до создания черновиков.</p>
         </div>
         <Link className={cn(buttonVariants({ variant: "secondary", size: "compact" }))} href="/seller/products">
           К товарам
         </Link>
-      </div>
+      </header>
       <ImportProductFlow />
-    </main>
+    </div>
   );
 }

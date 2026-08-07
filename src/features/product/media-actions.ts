@@ -8,7 +8,6 @@ import {
   getSellerProductMedia,
 } from "./media-queries";
 import {
-  getProductMediaExtension,
   PRODUCT_MEDIA_BUCKET,
   PRODUCT_MEDIA_MAX_COUNT,
   canRemoveProductMedia,
@@ -17,6 +16,7 @@ import {
   validateProductMediaFile,
   validateProductMediaSignature,
 } from "./media-schema";
+import { persistValidatedProductMediaFile } from "./media-upload-service";
 import { getCurrentSellerStoreForProducts, isProductId } from "./queries";
 
 function errorState(
@@ -153,38 +153,30 @@ export async function uploadProductMedia(
 
   const uploadedPaths: string[] = [];
   const insertedIds: string[] = [];
+  let uploadFailureMessage = "Не удалось сохранить фотографии. Попробуйте ещё раз.";
 
   try {
     for (const [index, item] of validatedFiles.entries()) {
       if (!item.validation.isValid) continue;
 
-      const mediaId = crypto.randomUUID();
-      const extension = getProductMediaExtension(item.validation.mimeType);
-      const storagePath = `${context.storeId}/${productId}/${mediaId}.${extension}`;
-      const { error: uploadError } = await context.supabase.storage
-        .from(PRODUCT_MEDIA_BUCKET)
-        .upload(storagePath, item.file, {
-          contentType: item.validation.mimeType,
-          upsert: false,
-        });
+      const persisted = await persistValidatedProductMediaFile({
+        supabase: context.supabase,
+        storeId: context.storeId,
+        productId,
+        file: item.file,
+        mimeType: item.validation.mimeType,
+        sortOrder: rowsResult.rows.length + index,
+        insertMedia: async (arguments_) =>
+          context.supabase.rpc("insert_product_media", arguments_),
+      });
 
-      if (uploadError) throw new Error("upload");
-      uploadedPaths.push(storagePath);
+      if (persisted.status !== "success") {
+        uploadFailureMessage = persisted.message;
+        throw new Error("persist");
+      }
 
-      const { error: insertError } = await context.supabase.rpc(
-        "insert_product_media",
-        {
-          target_media_id: mediaId,
-          target_product_id: productId,
-          target_storage_path: storagePath,
-          target_mime_type: item.validation.mimeType,
-          target_byte_size: item.file.size,
-          target_sort_order: rowsResult.rows.length + index,
-        },
-      );
-
-      if (insertError) throw new Error("insert");
-      insertedIds.push(mediaId);
+      uploadedPaths.push(persisted.upload.storagePath);
+      insertedIds.push(persisted.upload.mediaId);
     }
   } catch {
     if (uploadedPaths.length > 0) {
@@ -206,7 +198,7 @@ export async function uploadProductMedia(
         });
       }
     }
-    return errorState(previousState, "Не удалось сохранить фотографии. Попробуйте ещё раз.");
+    return errorState(previousState, uploadFailureMessage);
   }
 
   refreshProductMediaPaths(productId);

@@ -53,7 +53,9 @@ const requiredPaths = [
   "src/features/product/media-actions.ts",
   "src/features/product/media-queries.ts",
   "src/features/product/media-schema.ts",
+  "src/features/product/media-upload-service.ts",
   "src/features/product/product-media-manager.tsx",
+  "src/features/product/product-media-upload-queue.tsx",
   "src/features/product/lifecycle.ts",
   "src/features/product/product-lifecycle-context.tsx",
   "src/features/product/product-state-control.tsx",
@@ -166,7 +168,11 @@ if (
 }
 
 const indexHtml = readFileSync(indexHtmlPath, "utf8");
-if (!indexHtml.includes("Story 1.0 foundation smoke route")) {
+if (
+  !indexHtml.includes("Товары — ясно. Связь — напрямую.") ||
+  !indexHtml.includes("Открыть кабинет продавца") ||
+  !indexHtml.includes('lang="ru"')
+) {
   console.error("Foundation smoke check failed. Public route did not render expected HTML.");
   process.exit(1);
 }
@@ -672,7 +678,7 @@ if (
   !sellerProductsSource.includes("getSellerProductCovers") ||
   !sellerProductsSource.includes("parseSellerProductListFilter") ||
   !sellerProductsSource.includes("searchParams: Promise") ||
-  !sellerProductsSource.includes('aria-current={isActive ? "page" : undefined}') ||
+  !sellerProductsSource.includes('aria-current={active ? "page" : undefined}') ||
   !sellerProductsSource.includes('`/seller/products?status=${filter}`') ||
   !sellerProductsSource.includes("PRODUCT_STATUS_DELETED") ||
   !sellerProductsSource.includes("ProductCover") ||
@@ -680,8 +686,11 @@ if (
   !sellerProductsSource.includes('href="/seller/products/new"') ||
   !sellerProductsSource.includes('href={`/seller/products/${product.id}/edit`}') ||
   !sellerProductNewSource.includes("getCurrentSellerStoreProfile") ||
-  !sellerProductNewSource.includes("getInitialProductDraftFormState(null)") ||
-  !sellerProductNewSource.includes("ProductForm") ||
+  !sellerProductNewSource.includes("getInitialProductWizardDraftFormState") ||
+  !sellerProductNewSource.includes("ProductCreateWizard") ||
+  !sellerProductNewSource.includes("searchParams: Promise") ||
+  !sellerProductNewSource.includes("getSellerProductById") ||
+  !sellerProductNewSource.includes("getSellerProductMedia") ||
   !sellerProductEditSource.includes("getSellerProductById") ||
   !sellerProductEditSource.includes("getInitialProductDraftFormState(productResult.product)") ||
   !sellerProductEditSource.includes("ProductForm") ||
@@ -902,7 +911,7 @@ if (
   !publicProductDetailSource.includes("encodeURIComponent") ||
   !publicProductDetailSource.includes("availabilityStatus") ||
   !publicProductDetailSource.includes("description") ||
-  !publicProductDetailSource.includes("href={storefrontHref}") ||
+  !publicProductDetailSource.includes("productTitle={product.title}") ||
   !publicProductGallerySource.includes('"use client"') ||
   !publicProductGallerySource.includes("PublicStorefrontImage") ||
   !publicProductGallerySource.includes("onTouchStart") ||
@@ -916,7 +925,8 @@ if (
   !publicContactCtaSource.includes("data-contact-store-slug") ||
   !publicContactCtaSource.includes("disabled={!contactConfigured || status === \"pending\"}") ||
   !publicContactCtaSource.includes("Связаться в Telegram") ||
-  !publicContactCtaSource.includes("Связаться с продавцом в Telegram") ||
+  !publicContactCtaSource.includes("Связаться о") ||
+  !publicContactCtaSource.includes("productTitle") ||
   !publicContactCtaSource.includes("onClick={handleContactClick}") ||
   !publicContactCtaSource.includes("/api/contact/telegram") ||
   !publicContactCtaSource.includes('window.open("about:blank", "_blank")') ||
@@ -1052,7 +1062,9 @@ const mediaFeatureFiles = [
   "src/features/product/media-actions.ts",
   "src/features/product/media-queries.ts",
   "src/features/product/media-schema.ts",
+  "src/features/product/media-upload-service.ts",
   "src/features/product/product-media-manager.tsx",
+  "src/features/product/product-media-upload-queue.tsx",
 ];
 const mediaFeatureSource = mediaFeatureFiles
   .map((filePath) => readFileSync(join(root, filePath), "utf8"))
@@ -1072,7 +1084,8 @@ if (
   !mediaFeatureSource.includes("normalizeProductMediaOrder") ||
   !mediaFeatureSource.includes("canRemoveProductMedia") ||
   !mediaFeatureSource.includes("createSignedUrl") ||
-  !mediaFeatureSource.includes("useActionState") ||
+  !mediaFeatureSource.includes("useTransition") ||
+  !mediaFeatureSource.includes("XMLHttpRequest") ||
   !mediaFeatureSource.includes("aria-label")
 ) {
   console.error("Foundation smoke check failed. Product media validation or privilege boundaries are incomplete.");
@@ -1238,7 +1251,7 @@ if (
   !publicCatalogViewSource.includes("queueMicrotask") ||
   !publicCatalogViewSource.includes("aria-pressed") ||
   !publicCatalogViewSource.includes("grid-cols-2") ||
-  !publicCatalogViewSource.includes("flex flex-col gap-4") ||
+  !publicCatalogViewSource.includes("flex flex-col gap-5") ||
   !publicCatalogViewSource.includes('from "next/link"') ||
   !publicCatalogViewSource.includes("getPublicProductDetailHref") ||
   !publicCatalogViewSource.includes('from "./public-contact-cta"') ||

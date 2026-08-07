@@ -1,28 +1,247 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <title>UX Validation — Персональная витрина</title>
-  <style>
-    body{margin:0;background:#f7f7f5;color:#111;font:15px/1.55 Inter,system-ui,sans-serif}.wrap{max-width:920px;margin:0 auto;padding:32px 24px 64px}h1{margin:0 0 4px}.muted{color:#666}.box,.card{background:#fff;border:1px solid #e2e2de;border-radius:18px;padding:18px;margin:16px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.ok{color:#16a34a}.low{color:#64748b}code{background:#f1f1ee;padding:2px 5px;border-radius:6px}
-  </style>
+<meta charset="utf-8">
+<title>UX Design Validation: test01</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
+
+    --verdict-strong: #16a34a;
+    --verdict-adequate: #65a30d;
+    --verdict-thin: #d97706;
+    --verdict-broken: #dc2626;
+
+    --sev-low: #64748b;
+    --sev-medium: #ca8a04;
+    --sev-high: #ea580c;
+    --sev-critical: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .synthesis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    font-size: 15.5px;
+  }
+  .synthesis p { margin: 0 0 10px; }
+  .synthesis p:last-child { margin-bottom: 0; }
+
+  .dimension-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
+
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  section summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .verdict-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+  }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .verdict-thin { background: var(--verdict-thin); }
+  .verdict-broken { background: var(--verdict-broken); }
+
+  .dim-body { padding: 4px 20px 18px; }
+  .dim-judgment { color: var(--text); font-size: 14.5px; }
+  .dim-judgment p { margin: 0 0 10px; }
+
+  .findings-list { padding: 0 20px 4px; }
+  article.finding {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  article.finding:first-child { border-top: none; }
+  article.finding header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .badge-sev-low { background: rgba(100, 116, 139, 0.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202, 138, 4, 0.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234, 88, 12, 0.14); color: var(--sev-high); }
+  .badge-sev-critical { background: rgba(220, 38, 38, 0.14); color: var(--sev-critical); }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
+
+  .reviewer-source {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .mechanical {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  .mechanical li { margin-bottom: 4px; color: var(--text); }
+
+  footer.report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  footer .meta { display: flex; gap: 24px; flex-wrap: wrap; }
+</style>
 </head>
-<body><main class="wrap">
-  <h1>UX Validation — Персональная витрина</h1>
-  <div class="muted">Run at: 2026-08-01T03:31:10+03:00</div>
-  <section class="box">
-    <p><strong class="ok">Ready for downstream use.</strong> Previous contract gaps are addressed. No critical, high, or medium findings remain.</p>
-  </section>
-  <section class="grid">
-    <div class="card">Flow coverage<br><strong class="ok">strong</strong></div>
-    <div class="card">Token completeness<br><strong class="ok">strong</strong></div>
-    <div class="card">Component coverage<br><strong class="ok">strong</strong></div>
-    <div class="card">State coverage<br><strong class="ok">strong</strong></div>
-    <div class="card">Visual references<br><strong>adequate</strong></div>
-    <div class="card">Shape fit<br><strong class="ok">strong</strong></div>
-  </section>
-  <section class="box">
-    <h2>Severity counts</h2>
-    <p>Critical: 0 · High: 0 · Medium: 0 · Low: 4</p>
-  </section>
-</main></body></html>
+<body>
+  <div class="container">
+    <header class="report-header">
+      <div class="title">
+        <h1>test01 — UX Design Validation Report</h1>
+        <div class="subtitle">_bmad-output/planning-artifacts/ux-designs/ux-test01-2026-08-01</div>
+      </div>
+    </header>
+
+    <div class="synthesis">
+      <p>Пара <code>DESIGN.md</code> + <code>EXPERIENCE.md</code> готова служить downstream-контрактом: все UJ-1–UJ-5 и FR-1–FR-22 трассируются, token/component references разрешаются, а визуальные и поведенческие обязанности разделены без load-bearing пробелов.</p>
+      <p>Все восемь dimensions имеют verdict strong. Открытых Critical/High/Medium/Low code findings нет. Browser evidence закрывает exact reflow 320–430 px, фактический focus и recovery paths; отдельный physical screen-reader pass, literal 400% zoom и preference emulation не выполнялись, поэтому формальный WCAG certificate не заявляется.</p>
+    </div>
+
+    <div class="dimension-summary">
+      <div class="dim-card"><div class="dim-name">1. Flow coverage</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">2. Token completeness</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">3. Component coverage</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">4. State coverage</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">5. Visual reference coverage</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">6. Bloat &amp; overspecification</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">7. Inheritance discipline</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">8. Shape fit</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+    </div>
+
+    <section class="dimension"><details><summary><h2>1. Flow coverage</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>Все пять UJ имеют одноимённые Key Flows с героем, шагами, climax и failure/empty веткой. FR-1–FR-22 дословно трассируются к surfaces, components и state contracts. Открытых findings нет.</p></div></div></details></section>
+    <section class="dimension"><details><summary><h2>2. Token completeness</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>Все frontmatter tokens определены и разрешаются в обеих spine-документах. Светлая тема, contrast targets и load-bearing пары закреплены однозначно. Открытых findings нет.</p></div></div></details></section>
+    <section class="dimension"><details><summary><h2>3. Component coverage</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>31/31 component names совпадают между DESIGN frontmatter, DESIGN Components и EXPERIENCE Component Patterns; sub-patterns закреплены в родительских контрактах. Открытых findings нет.</p></div></div></details></section>
+    <section class="dimension"><details><summary><h2>4. State coverage</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>Seller и buyer surfaces покрывают cold-load, first-use/empty, validation, pending, error/retry, offline, ownership/privacy и success; focus, disabled и motion правила сквозные. Открытых findings нет.</p></div></div></details></section>
+    <section class="dimension"><details><summary><h2>5. Visual reference coverage</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>Семь HTML mockups связаны из обоих spine и снабжены границами применимости; ранние glass/pill решения и демонстрационные limits явно неканоничны. Открытых findings нет.</p></div></div></details></section>
+    <section class="dimension"><details><summary><h2>6. Bloat &amp; overspecification</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>Visual и behavioral обязанности разделены; FR traceability полезна downstream, а полный media transport invariant определён один раз. Открытых findings нет.</p></div></div></details></section>
+    <section class="dimension"><details><summary><h2>7. Inheritance discipline</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>Все sources разрешаются, UJ/FR и domain boundaries сохранены; visual override, sequential upload, idempotency и dialog focus policy явно закреплены. Открытых findings нет.</p></div></div></details></section>
+    <section class="dimension"><details><summary><h2>8. Shape fit</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>Обе spine-документации содержат канонические секции; responsive/platform, inspiration, traceability и implementation decisions оправданы multi-surface scope. Открытых findings нет.</p></div></div></details></section>
+
+    <section class="reviewer-section">
+      <details>
+        <summary><h2>Accessibility + Mobile review</h2><span class="reviewer-source">review-accessibility-mobile.md</span></summary>
+        <div class="dim-body"><div class="dim-judgment">
+          <p>После fix-pass открытых Critical/High/Medium/Low code defects нет. Закрыты риски 320 px min-width, queue admission, focus obstruction/fallback, long-word overflow, wizard/history race, heading/metadata, gallery и CTA semantics.</p>
+          <p>Final browser evidence подтверждает reflow 320/360/390/412/430 и desktop 1440, реальные focus/dialog/recovery paths, upload failure + retry, accessibility tree, CSSOM media rules и clean console. A11Y-EVID-01 закрыт, High verification gaps — 0. Остаточные evidence limits: нет отдельного physical screen-reader session, literal 400% zoom, preference emulation, воспроизведения точного skip-link gesture и отдельных runtime-точек 768/1024; формальный WCAG certificate не заявляется.</p>
+        </div></div>
+      </details>
+    </section>
+
+    <div class="mechanical">
+      <h3>Mechanical notes</h3>
+      <ul>
+        <li>Frontmatter sources: 6/6; source lists идентичны.</li>
+        <li>Visual references: 7/7; orphan imports/wireframes отсутствуют.</li>
+        <li>Components: 31/31; token references и Markdown links разрешаются.</li>
+        <li><code>npm run check</code>: pass; 105/105 contracts в 27 файлах.</li>
+        <li>Browser/code-review/a11y evidence записаны; schema/migrations/deploy не изменены.</li>
+      </ul>
+    </div>
+
+    <footer class="report-footer">
+      <div class="meta">
+        <span>Rubric: _bmad-output/planning-artifacts/ux-designs/ux-test01-2026-08-01/review-rubric.md</span>
+        <span>Generated: 2026-08-07 06:02:46 +03:00</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

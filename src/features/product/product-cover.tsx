@@ -16,7 +16,7 @@ export function ProductCover({ src, title }: ProductCoverProps) {
     return (
       <div
         aria-label={`У товара ${title} пока нет обложки`}
-        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-surface-raised px-2 text-center text-xs leading-4 text-foreground/55"
+        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-sm border border-dashed border-border-strong bg-surface-muted px-2 text-center text-xs leading-4 text-ink-secondary"
         role="img"
       >
         Нет фото
@@ -27,7 +27,7 @@ export function ProductCover({ src, title }: ProductCoverProps) {
   return (
     <img
       alt={`Обложка товара: ${title}`}
-      className="h-20 w-20 shrink-0 rounded-xl object-cover"
+      className="h-20 w-20 shrink-0 rounded-sm object-cover"
       onError={() => setHasError(true)}
       src={src}
     />

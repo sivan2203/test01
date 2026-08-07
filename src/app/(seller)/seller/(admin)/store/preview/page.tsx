@@ -1,14 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { GlassPanel } from "@/components/design-system";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getPublishedPublicCatalogItemsForStore } from "@/features/store/public-catalog";
 import { getCurrentSellerStoreProfile } from "@/features/store/queries";
 import { PublicStorefrontShell } from "@/features/store/public-storefront-shell";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Предпросмотр витрины" };
 
 export default async function SellerStorePreviewPage() {
   const storeResult = await getCurrentSellerStoreProfile();
@@ -23,24 +25,13 @@ export default async function SellerStorePreviewPage() {
 
   if (storeResult.status === "not_found") {
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 py-6">
-        <GlassPanel className="p-5">
-          <p className="text-sm text-foreground/60">Предпросмотр витрины</p>
-          <h1 className="mt-2 text-2xl font-semibold">
-            Сначала создайте магазин
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-foreground/70">
-            Предпросмотр показывает вашу публичную витрину глазами покупателя.
-            Он станет доступен после первичной настройки магазина.
-          </p>
-          <Link
-            className={cn(buttonVariants({ variant: "primary" }), "mt-5 w-full")}
-            href="/seller/store"
-          >
-            Вернуться к настройкам
-          </Link>
-        </GlassPanel>
-      </main>
+      <EmptyState
+        action={<Link className={buttonVariants()} href="/seller/store">Вернуться к настройкам</Link>}
+        description="Предпросмотр показывает публичную витрину глазами покупателя и станет доступен после первичной настройки."
+        eyebrow="МАГАЗИН / ПРЕДПРОСМОТР"
+        title="Сначала создайте магазин"
+        titleAs="h1"
+      />
     );
   }
 
@@ -48,25 +39,13 @@ export default async function SellerStorePreviewPage() {
 
   if (!store.slug) {
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 py-6">
-        <GlassPanel className="p-5">
-          <p className="text-sm text-foreground/60">Предпросмотр витрины</p>
-          <h1 className="mt-2 text-2xl font-semibold">
-            Настройте публичную ссылку
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-foreground/70">
-            Чтобы открыть режим покупателя, сохраните короткую публичную ссылку
-            магазина. Так предпросмотр будет проверять ту же витрину, которой вы
-            делитесь в соцсетях.
-          </p>
-          <Link
-            className={cn(buttonVariants({ variant: "primary" }), "mt-5 w-full")}
-            href="/seller/store"
-          >
-            Вернуться к настройкам
-          </Link>
-        </GlassPanel>
-      </main>
+      <EmptyState
+        action={<Link className={buttonVariants()} href="/seller/store">Вернуться к настройкам</Link>}
+        description="Сохраните короткую публичную ссылку, чтобы проверить именно ту витрину, которой вы делитесь с покупателями."
+        eyebrow="МАГАЗИН / ПУБЛИЧНАЯ ССЫЛКА"
+        title="Настройте публичную ссылку"
+        titleAs="h1"
+      />
     );
   }
 

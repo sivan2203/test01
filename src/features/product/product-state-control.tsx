@@ -1,18 +1,13 @@
 "use client";
 
-import {
-  useActionState,
-  useEffect,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
 
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  deleteProduct,
-  hideProduct,
-  publishProduct,
-} from "./actions";
+import { Dialog } from "@/components/ui/dialog";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { StatusMessage } from "@/components/ui/status-message";
+import { deleteProduct, hideProduct, publishProduct } from "./actions";
 import {
   getInitialProductLifecycleActionState,
   getProductStatusLabel,
@@ -30,167 +25,233 @@ type ProductStateControlProps = {
   mediaLoadError?: boolean;
 };
 
+type ConfirmationKind = "hide" | "delete";
+
 export function ProductStateControl({
   productId,
   productStatus,
   mediaCount,
   mediaLoadError = false,
 }: ProductStateControlProps) {
-  const [publishState, publishAction, publishPending] = useActionState(
-    publishProduct.bind(null, productId),
-    getInitialProductLifecycleActionState(productStatus),
+  const initialState = getInitialProductLifecycleActionState(productStatus);
+  const [actionState, setActionState] = useState(initialState);
+  const actionStateRef = useRef(actionState);
+  const confirmationDialogOpenRef = useRef(false);
+  const [pending, startTransition] = useTransition();
+  const [confirmation, setConfirmation] = useState<ConfirmationKind | null>(null);
+  const [lastAction, setLastAction] = useState<
+    "publish" | "hide" | "delete" | null
+  >(null);
+  const lifecycle = useProductLifecycleStatus(productStatus);
+
+  const currentMediaCount = lifecycle.mediaCount ?? mediaCount;
+  const message = actionState.message;
+  const messageIsError = actionState.status === "error";
+  const displayedStatus = actionState.productStatus ?? lifecycle.productStatus;
+
+  const runLifecycleAction = useCallback(
+    (action: "publish" | "hide" | "delete", formData: FormData) => {
+      setLastAction(action);
+      startTransition(async () => {
+        const handler =
+          action === "publish"
+            ? publishProduct
+            : action === "hide"
+              ? hideProduct
+              : deleteProduct;
+        let nextState;
+        try {
+          nextState = await handler(
+            productId,
+            actionStateRef.current,
+            formData,
+          );
+        } catch {
+          nextState = {
+            status: "error" as const,
+            message:
+              "Соединение прервалось. Состояние товара не изменено — повторите действие.",
+            productStatus: actionStateRef.current.productStatus,
+          };
+        }
+        actionStateRef.current = nextState;
+        setActionState(nextState);
+        lifecycle.setProductStatus(nextState.productStatus);
+        if (
+          nextState.status === "success" ||
+          nextState.productStatus === PRODUCT_STATUS_DELETED
+        ) {
+          const shouldMoveFocus =
+            action === "publish" || confirmationDialogOpenRef.current;
+          confirmationDialogOpenRef.current = false;
+          setConfirmation(null);
+          if (shouldMoveFocus) {
+            requestAnimationFrame(() => {
+              document.getElementById("product-state-heading")?.focus();
+            });
+          }
+        }
+      });
+    },
+    [lifecycle, productId],
   );
-  const [hideState, hideAction, hidePending] = useActionState(
-    hideProduct.bind(null, productId),
-    getInitialProductLifecycleActionState(productStatus),
-  );
-  const [deleteState, deleteAction, deletePending] = useActionState(
-    deleteProduct.bind(null, productId),
-    getInitialProductLifecycleActionState(productStatus),
-  );
-  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
-  const [lastAction, setLastAction] = useState<"publish" | "hide" | "delete" | null>(null);
-  const {
-    productStatus: contextStatus,
-    setProductStatus,
-  } = useProductLifecycleStatus(productStatus);
 
-  const pending = publishPending || hidePending || deletePending;
-  const actionState =
-    lastAction === "publish"
-      ? publishState
-      : lastAction === "hide"
-        ? hideState
-        : lastAction === "delete"
-          ? deleteState
-          : [deleteState, hideState, publishState].find(
-              (state) => state.status !== "idle",
-            );
-  const message = actionState?.message ?? "";
-  const messageIsError = actionState?.status === "error";
-  const displayedStatus = actionState?.productStatus ?? contextStatus;
-
-  useEffect(() => {
-    if (actionState && actionState.status !== "idle") {
-      setProductStatus(actionState.productStatus);
-    }
-  }, [actionState, setProductStatus]);
-
-  function closeDeleteConfirmation() {
-    setDeleteConfirmationOpen(false);
-    requestAnimationFrame(() => {
-      document.getElementById("delete-product-trigger")?.focus();
-    });
-  }
-
-  function handleDeleteDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "Escape" || pending) return;
-    event.preventDefault();
-    closeDeleteConfirmation();
-  }
+  const confirmationIsHide = confirmation === "hide";
+  const confirmationTitle = confirmationIsHide
+    ? "Скрыть товар от покупателей?"
+    : "Удалить товар?";
+  const confirmationDescription = confirmationIsHide
+    ? "Товар исчезнет из публичной витрины, но останется в кабинете. Его можно опубликовать снова."
+    : "Товар и его фотографии исчезнут из публичной витрины. Действие нельзя отменить.";
+  const confirmationError =
+    messageIsError &&
+    ((confirmation === "hide" && lastAction === "hide") ||
+      (confirmation === "delete" && lastAction === "delete"))
+      ? message
+      : "";
 
   return (
-    <section
-      aria-labelledby="product-state-heading"
-      className="flex flex-col gap-4"
-    >
-      <div>
-        <p className="text-sm text-foreground/60">Состояние товара</p>
-        <h2 id="product-state-heading" className="mt-1 text-xl font-semibold">
-          {getProductStatusLabel(displayedStatus)}
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-foreground/70">
-          Сохранение полей не меняет состояние автоматически. Публикация,
-          скрытие и удаление выполняются отдельным действием.
+    <section aria-labelledby="product-state-heading" className="space-y-5">
+      <div className="border-b border-border-strong pb-4">
+        <p className="font-mono text-xs text-ink-secondary">Состояние товара</p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h2
+            className="text-xl font-semibold tracking-tight outline-none"
+            id="product-state-heading"
+            tabIndex={-1}
+          >
+            {getProductStatusLabel(displayedStatus)}
+          </h2>
+          <StatusBadge
+            tone={
+              displayedStatus === PRODUCT_STATUS_PUBLISHED
+                ? "success"
+                : displayedStatus === PRODUCT_STATUS_DELETED
+                  ? "danger"
+                  : "neutral"
+            }
+          >
+            {getProductStatusLabel(displayedStatus)}
+          </StatusBadge>
+        </div>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-secondary">
+          Сохранение полей не публикует товар. Видимость меняется только после
+          отдельной команды.
         </p>
       </div>
 
-      {displayedStatus !== PRODUCT_STATUS_PUBLISHED ? (
-        <p className="text-sm leading-6 text-foreground/70">
-          {mediaLoadError
-            ? "Не удалось проверить фотографии. Обновите страницу перед публикацией."
-            : mediaCount === 0
-              ? "Для публикации добавьте от 1 до 10 фотографий."
-              : `Фотографии для публикации: ${mediaCount} из 10.`}
+      {mediaLoadError ? (
+        <Alert tone="warning" title="Фотографии не проверены">
+          Обновите страницу перед публикацией, чтобы не принять ошибку загрузки
+          за пустой список.
+        </Alert>
+      ) : displayedStatus !== PRODUCT_STATUS_PUBLISHED ? (
+        <p className="text-sm leading-6 text-ink-secondary">
+          {currentMediaCount === 0
+            ? "Для публикации добавьте хотя бы одну фотографию."
+            : `Для публикации готово фотографий: ${currentMediaCount} из 10.`}
         </p>
       ) : null}
 
-      {displayedStatus === PRODUCT_STATUS_PUBLISHED ? (
-        <form action={hideAction} onSubmit={() => setLastAction("hide")}>
-          <Button className="w-full" disabled={pending} type="submit" variant="secondary">
-            {hidePending ? "Скрываем…" : "Скрыть от покупателей"}
-          </Button>
-        </form>
-      ) : displayedStatus === PRODUCT_STATUS_HIDDEN || displayedStatus === "draft" ? (
-        <form action={publishAction} onSubmit={() => setLastAction("publish")}>
-          <Button className="w-full" disabled={pending} type="submit">
-            {publishPending ? "Публикуем…" : "Опубликовать товар"}
-          </Button>
-        </form>
-      ) : null}
-
-      {displayedStatus !== PRODUCT_STATUS_DELETED ? (
-        deleteConfirmationOpen ? (
-          <div
-            aria-describedby="delete-product-description"
-            aria-labelledby="delete-product-title"
-            aria-modal="false"
-            className="rounded-xl border border-border bg-muted p-4"
-            onKeyDown={handleDeleteDialogKeyDown}
-            role="alertdialog"
-          >
-            <p className="font-medium" id="delete-product-title">
-              Удалить товар?
-            </p>
-            <p
-              className="mt-2 text-sm leading-6 text-foreground/70"
-              id="delete-product-description"
-            >
-              Товар исчезнет из публичной витрины. Действие нельзя отменить.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Button
-                className="w-full"
-                disabled={pending}
-                onClick={closeDeleteConfirmation}
-                variant="secondary"
-              >
-                Отмена
-              </Button>
-              <form action={deleteAction} onSubmit={() => setLastAction("delete")}>
-                <input name="confirmDelete" type="hidden" value="yes" />
-                <Button
-                  aria-label="Подтвердить удаление товара"
-                  autoFocus
-                  className="w-full"
-                  disabled={pending}
-                  type="submit"
-                >
-                  {deletePending ? "Удаляем…" : "Удалить товар"}
-                </Button>
-              </form>
-            </div>
-          </div>
-        ) : (
+      <div className="flex flex-wrap gap-3">
+        {displayedStatus === PRODUCT_STATUS_PUBLISHED ? (
           <Button
-            className="w-full"
+            disabled={pending}
+            id="hide-product-trigger"
+            onClick={() => {
+              confirmationDialogOpenRef.current = true;
+              setConfirmation("hide");
+            }}
+            variant="secondary"
+          >
+            Скрыть от покупателей
+          </Button>
+        ) : displayedStatus === PRODUCT_STATUS_HIDDEN || displayedStatus === "draft" ? (
+          <form action={(formData) => runLifecycleAction("publish", formData)}>
+            <Button
+              disabled={pending || mediaLoadError || currentMediaCount === 0}
+              type="submit"
+            >
+              {pending && lastAction === "publish"
+                ? "Публикуем…"
+                : "Опубликовать товар"}
+            </Button>
+          </form>
+        ) : null}
+
+        {displayedStatus !== PRODUCT_STATUS_DELETED ? (
+          <Button
             disabled={pending}
             id="delete-product-trigger"
-            onClick={() => setDeleteConfirmationOpen(true)}
-            variant="ghost"
+            onClick={() => {
+              confirmationDialogOpenRef.current = true;
+              setConfirmation("delete");
+            }}
+            variant="destructive"
           >
             Удалить товар
           </Button>
-        )
-      ) : null}
+        ) : null}
+      </div>
 
-      <p
-        aria-live="polite"
-        className={message ? "text-sm leading-6 text-foreground/75" : "sr-only"}
-        role={messageIsError ? "alert" : "status"}
+      {confirmation ? null : (
+        <StatusMessage error={messageIsError}>{message}</StatusMessage>
+      )}
+
+      <Dialog
+        actions={
+          <>
+            <Button
+              data-dialog-initial-focus
+              onClick={() => {
+                confirmationDialogOpenRef.current = false;
+                setConfirmation(null);
+              }}
+              variant="secondary"
+            >
+              {pending ? "Закрыть" : "Отмена"}
+            </Button>
+            {confirmationIsHide ? (
+              <form action={(formData) => runLifecycleAction("hide", formData)}>
+                <Button disabled={pending} type="submit" variant="destructive">
+                  {pending && lastAction === "hide" ? "Скрываем…" : "Скрыть товар"}
+                </Button>
+              </form>
+            ) : confirmation === "delete" ? (
+              <form action={(formData) => runLifecycleAction("delete", formData)}>
+                <input name="confirmDelete" type="hidden" value="yes" />
+                <Button
+                  aria-label="Подтвердить удаление товара"
+                  disabled={pending}
+                  type="submit"
+                  variant="destructive"
+                >
+                  {pending && lastAction === "delete" ? "Удаляем…" : "Удалить товар"}
+                </Button>
+              </form>
+            ) : null}
+          </>
+        }
+        description={confirmationDescription}
+        fallbackFocusId="product-state-heading"
+        onOpenChange={(open) => {
+          if (!open) {
+            confirmationDialogOpenRef.current = false;
+            setConfirmation(null);
+          }
+        }}
+        open={confirmation !== null}
+        title={confirmationTitle}
       >
-        {message || "Нет новых сообщений"}
-      </p>
+        {pending ? (
+          <StatusMessage>Действие выполняется. Диалог можно закрыть — операция продолжится.</StatusMessage>
+        ) : null}
+        {confirmationError ? (
+          <Alert tone="danger" title="Действие не выполнено">
+            {confirmationError}
+          </Alert>
+        ) : null}
+      </Dialog>
     </section>
   );
 }

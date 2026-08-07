@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Field, fieldControlClassName } from "@/components/ui/field";
+import { StatusMessage } from "@/components/ui/status-message";
 import { requestSellerMagicLink } from "./actions";
 import { initialSignInFormState } from "./state";
 
@@ -15,14 +17,25 @@ export function SellerSignInForm({ from }: SellerSignInFormProps) {
     requestSellerMagicLink,
     initialSignInFormState,
   );
+  const emailHasError = state.status === "error";
 
   return (
     <form action={formAction} className="mt-6 flex flex-col gap-4">
       <input type="hidden" name="from" value={from} />
-      <label className="flex flex-col gap-2 text-sm font-medium">
-        Email
+      <Field
+        helper="Пришлём одноразовую ссылку. Обычно она приходит в течение минуты."
+        htmlFor="seller-email"
+        label="Email"
+      >
         <input
-          className="min-h-11 rounded-xl border border-border bg-surface-raised px-4 text-base text-foreground outline-none transition-colors placeholder:text-foreground/40 focus:border-ring"
+          aria-describedby={
+            emailHasError
+              ? "seller-email-help seller-email-status"
+              : "seller-email-help"
+          }
+          aria-invalid={emailHasError}
+          className={fieldControlClassName}
+          id="seller-email"
           name="email"
           type="email"
           inputMode="email"
@@ -31,16 +44,11 @@ export function SellerSignInForm({ from }: SellerSignInFormProps) {
           defaultValue={state.email}
           required
         />
-      </label>
+      </Field>
 
-      {state.message ? (
-        <p
-          className="text-sm leading-6 text-foreground/75"
-          role={state.status === "error" ? "alert" : "status"}
-        >
-          {state.message}
-        </p>
-      ) : null}
+      <StatusMessage error={emailHasError} id="seller-email-status">
+        {state.message}
+      </StatusMessage>
 
       <Button className="w-full" type="submit" disabled={isPending}>
         {isPending ? "Отправляем ссылку…" : "Получить ссылку для входа"}

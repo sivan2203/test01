@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Персональная витрина — мастер создания товара</title>
+  <style>
+    /*
+      GOVERNING SPINE / MEMLOG
+      DESIGN.md: Typography; Layout & Spacing; Shapes; Form field; Product state control.
+      EXPERIENCE.md: Product create/edit; Form field; Product draft missing photo; Product save failed;
+      Accessibility Floor; Responsive & Platform; Flow 1 — Seller first launch.
+      .memlog.md 2026-08-07: 4 steps — Основное → Продажа → Фото → Проверка;
+      step validation inline; Back/Continue preserve data; final review with edit links;
+      mobile announces «Шаг n из 4»; publish and save-draft remain explicit.
+    */
+    :root {
+      --paper: #f5f3ee;
+      --surface: #fbfaf7;
+      --ink: #171716;
+      --muted: #676760;
+      --faint: #706f69;
+      --line: #d8d5ce;
+      --line-strong: #b9b6ae;
+      --accent: #3159d8;
+      --success: #1e6b48;
+      --radius: 8px;
+      --sans: "Onest", "Segoe UI", Arial, sans-serif;
+      --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #dedbd4; color: var(--ink); font: 14px/1.45 var(--sans); }
+    button, a { font: inherit; }
+    .stage { min-width: 1240px; padding: 28px; }
+    .caption { width: min(1440px, calc(100vw - 56px)); margin: 0 auto 10px; color: #575650; font: 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+    .frames { width: min(1440px, calc(100vw - 56px)); margin: 0 auto; display: grid; grid-template-columns: minmax(820px, 1fr) 390px; gap: 26px; align-items: start; }
+    .browser { overflow: hidden; border: 1px solid #aba8a1; border-radius: 10px; background: var(--surface); box-shadow: 0 14px 32px rgba(23,23,22,.07); }
+    .chrome { height: 38px; display: grid; grid-template-columns: 80px 1fr 80px; align-items: center; border-bottom: 1px solid var(--line); background: #ece9e3; color: var(--muted); font: 10px var(--mono); }
+    .dots { display: flex; gap: 6px; padding-left: 14px; }
+    .dot { width: 8px; height: 8px; border: 1px solid #9a978f; border-radius: 50%; }
+    .address { justify-self: center; width: 390px; padding: 5px 10px; border: 1px solid #cfcbc3; border-radius: 6px; text-align: center; background: #f6f4ef; }
+    .local { justify-self: end; padding-right: 12px; }
+    .desktop-app { min-height: 820px; display: grid; grid-template-columns: 198px 1fr; }
+    .sidebar { padding: 24px 16px; border-right: 1px solid var(--line); background: #efede7; }
+    .brand { padding: 0 7px 20px; border-bottom: 1px solid var(--line); }
+    .brand b { display: block; margin-top: 5px; font-size: 16px; }
+    .mono { color: var(--muted); font: 10px var(--mono); letter-spacing: .07em; text-transform: uppercase; }
+    .back { display: block; margin-top: 22px; padding: 10px 7px; color: var(--ink); text-decoration: none; border-left: 2px solid var(--accent); }
+    .draft-state { margin: 30px 7px 0; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+    .draft-state strong { display: block; margin-bottom: 4px; color: var(--success); font: 10px var(--mono); text-transform: uppercase; }
+    .desktop-main { padding: 30px 38px 38px; background: var(--paper); }
+    .desktop-head { display: flex; justify-content: space-between; align-items: start; padding-bottom: 22px; border-bottom: 1px solid var(--line-strong); }
+    h1 { margin: 6px 0 0; font-size: 29px; line-height: 1.12; letter-spacing: -.035em; }
+    .save-draft { min-height: 38px; padding: 0 13px; border: 1px solid var(--line-strong); border-radius: 7px; background: transparent; color: var(--ink); font-weight: 650; }
+    .stepper { display: grid; grid-template-columns: repeat(4, 1fr); margin: 27px 0 30px; border-top: 1px solid var(--line-strong); }
+    .step { position: relative; padding: 13px 12px 0 0; color: var(--muted); }
+    .step::before { content: ""; position: absolute; top: -3px; left: 0; width: 5px; height: 5px; border-radius: 50%; background: var(--line-strong); }
+    .step.done::before, .step.current::before { background: var(--accent); }
+    .step.current { color: var(--ink); font-weight: 650; }
+    .step-index { display: block; margin-bottom: 4px; font: 9px var(--mono); color: var(--faint); }
+    .review-intro { display: flex; justify-content: space-between; align-items: end; margin-bottom: 14px; }
+    h2 { margin: 0; font-size: 19px; letter-spacing: -.02em; }
+    .review-note { max-width: 350px; color: var(--muted); font-size: 12px; }
+    .review { border-top: 3px solid var(--ink); }
+    .review-section { display: grid; grid-template-columns: 150px 1fr 80px; gap: 20px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+    .review-label { color: var(--muted); font: 10px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+    .review-value { display: grid; gap: 7px; }
+    .review-title { font-size: 18px; font-weight: 650; }
+    .subtle { color: var(--muted); }
+    .edit { justify-self: end; color: var(--accent); text-decoration: none; font-weight: 650; }
+    .photo-strip { display: flex; gap: 8px; }
+    .photo { width: 58px; height: 58px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 6px; background: #d9c8b2; color: #5d4936; font: 10px var(--mono); }
+    .photo:nth-child(2) { background: #d7d2c8; color: #52504a; }
+    .photo:nth-child(3) { background: #c8d0d2; color: #394649; }
+    .cover { color: var(--success); font: 9px var(--mono); text-transform: uppercase; }
+    .footer-actions { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; }
+    .button { min-height: 42px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 7px; background: transparent; color: var(--ink); font-weight: 650; }
+    .button.primary { border-color: var(--accent); background: var(--accent); color: white; min-width: 190px; }
+    .phone { width: 390px; min-height: 858px; overflow: hidden; border: 1px solid #97948d; border-radius: 28px; background: var(--paper); box-shadow: 0 14px 32px rgba(23,23,22,.07); }
+    .phone-bar { height: 29px; display: flex; justify-content: space-between; align-items: center; padding: 0 18px; font: 10px var(--mono); background: #ece9e3; }
+    .mobile-head { padding: 17px 16px 14px; border-bottom: 1px solid var(--line); }
+    .mobile-head-row { display: flex; justify-content: space-between; align-items: center; }
+    .close { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 7px; background: transparent; }
+    .mobile-head h1 { font-size: 23px; }
+    .mobile-progress { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; margin-top: 15px; }
+    .bar { height: 3px; background: var(--line); }
+    .bar span { display: block; width: 100%; height: 100%; background: var(--accent); }
+    .mobile-content { padding: 18px 16px 112px; }
+    .mobile-content h2 { font-size: 18px; }
+    .mobile-note { margin: 5px 0 16px; color: var(--muted); font-size: 12px; }
+    .mobile-section { padding: 15px 0; border-top: 1px solid var(--line); }
+    .mobile-section:first-of-type { border-top: 3px solid var(--ink); }
+    .mobile-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .mobile-label-row a { color: var(--accent); text-decoration: none; font-weight: 650; }
+    .mobile-title { font-size: 17px; font-weight: 650; }
+    .mobile-photos { display: flex; gap: 7px; margin-top: 9px; }
+    .mobile-photo { width: 52px; height: 52px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 6px; background: #d9c8b2; font: 9px var(--mono); }
+    .mobile-photo:nth-child(2) { background: #d7d2c8; }
+    .mobile-photo:nth-child(3) { background: #c8d0d2; }
+    .mobile-footer { position: relative; margin-top: -94px; min-height: 94px; padding: 10px 16px 16px; border-top: 1px solid var(--line-strong); background: #f5f3ee; }
+    .mobile-footer .button { width: 100%; min-height: 48px; }
+    .mobile-footer-links { display: flex; justify-content: space-between; margin-bottom: 9px; }
+    .mobile-footer-links button { border: 0; padding: 0; background: transparent; color: var(--muted); }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="caption">Key screen 02 · Product wizard · Step 4 review · Desktop + 390 px</div>
+    <div class="frames">
+      <section class="browser" aria-label="Мастер создания товара на компьютере">
+        <div class="chrome" aria-hidden="true"><div class="dots"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div><div class="address">app.vitrina.local/seller/products/new</div><div class="local">LOCAL</div></div>
+        <div class="desktop-app">
+          <aside class="sidebar"><div class="brand"><span class="mono">Витрина / Товары</span><b>Anna Light Studio</b></div><a class="back" href="#">← К товарам</a><div class="draft-state"><strong>Черновик сохранён</strong>Сегодня, 18:37</div></aside>
+          <main class="desktop-main">
+            <header class="desktop-head"><div><div class="mono">Новый товар · PRD-DRAFT-019</div><h1>Добавить товар</h1></div><button class="save-draft">Сохранить черновик</button></header>
+            <nav class="stepper" aria-label="Этапы создания товара">
+              <div class="step done"><span class="step-index">01 · готово</span>Основное</div>
+              <div class="step done"><span class="step-index">02 · готово</span>Продажа</div>
+              <div class="step done"><span class="step-index">03 · готово</span>Фото</div>
+              <div class="step current" aria-current="step"><span class="step-index">04 · сейчас</span>Проверка</div>
+            </nav>
+            <div class="review-intro"><div><h2>Проверьте перед публикацией</h2><div class="review-note">Покупатель увидит только эти данные. Любой раздел можно изменить без потери остальных.</div></div><span class="mono">Все обязательные поля заполнены</span></div>
+            <section class="review">
+              <div class="review-section"><div class="review-label">Основное</div><div class="review-value"><div class="review-title">Лампа Luna</div><div class="subtle">Светильник ручной работы из матового стекла. Мягкий свет для спальни или рабочего стола.</div></div><a class="edit" href="#">Изменить</a></div>
+              <div class="review-section"><div class="review-label">Продажа</div><div class="review-value"><strong>4 900 ₽</strong><span>В наличии · RUB</span></div><a class="edit" href="#">Изменить</a></div>
+              <div class="review-section"><div class="review-label">Фото · 3</div><div class="review-value"><div class="photo-strip"><div class="photo">LUNA</div><div class="photo">SIDE</div><div class="photo">DETAIL</div></div><span class="cover">Первое фото — обложка</span></div><a class="edit" href="#">Изменить</a></div>
+              <div class="review-section"><div class="review-label">Публикация</div><div class="review-value"><strong>Сразу в публичной витрине</strong><span class="subtle">Товар появится по адресу /anna-light/luna.</span></div><a class="edit" href="#">Изменить</a></div>
+            </section>
+            <footer class="footer-actions"><button class="button">← Назад к фото</button><button class="button primary">Опубликовать товар</button></footer>
+          </main>
+        </div>
+      </section>
+      <section class="phone" aria-label="Мастер создания товара на телефоне шириной 390 пикселей">
+        <div class="phone-bar"><span>18:42</span><span>● LTE 82%</span></div>
+        <header class="mobile-head">
+          <div class="mobile-head-row"><div><div class="mono">Шаг 4 из 4</div><h1>Проверка</h1></div><button class="close" aria-label="Закрыть мастер">×</button></div>
+          <div class="mobile-progress"><div class="bar" aria-hidden="true"><span></span></div><span class="mono">100%</span></div>
+        </header>
+        <main class="mobile-content">
+          <h2>Всё готово к публикации</h2><p class="mobile-note">Проверьте товар так, как его увидит покупатель.</p>
+          <section class="mobile-section"><div class="mobile-label-row"><span class="mono">Основное</span><a href="#">Изменить</a></div><div class="mobile-title">Лампа Luna</div><div class="subtle">Светильник ручной работы из матового стекла.</div></section>
+          <section class="mobile-section"><div class="mobile-label-row"><span class="mono">Продажа</span><a href="#">Изменить</a></div><div class="mobile-title">4 900 ₽</div><div class="subtle">В наличии</div></section>
+          <section class="mobile-section"><div class="mobile-label-row"><span class="mono">Фото · 3</span><a href="#">Изменить</a></div><div class="mobile-photos"><div class="mobile-photo">LUNA</div><div class="mobile-photo">SIDE</div><div class="mobile-photo">DETAIL</div></div><div class="cover">Обложка выбрана</div></section>
+          <section class="mobile-section"><div class="mobile-label-row"><span class="mono">Публикация</span><a href="#">Изменить</a></div><div>Сразу в публичной витрине</div></section>
+        </main>
+        <footer class="mobile-footer"><div class="mobile-footer-links"><button>← Назад</button><button>Сохранить черновик</button></div><button class="button primary">Опубликовать товар</button></footer>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

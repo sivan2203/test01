@@ -27,8 +27,9 @@ test("import UI remains seller-only, mobile-friendly, and draft-first", () => {
   assert.match(flow, /только черновики/);
   assert.match(flow, /первый из максимум/);
   assert.match(flow, /min-h-11/);
-  assert.match(flow, /focus-visible:ring/);
-  assert.match(flow, /role="alert"/);
+  assert.match(flow, /focus-within:ring|fieldControlClassName/);
+  assert.match(flow, /StatusMessage/);
+  assert.match(flow, /<StatusMessage[^>]*error/);
   assert.match(flow, /role="status"/);
   assert.match(flow, /importProductDrafts/);
   assert.match(flow, /idempotencyKey/);

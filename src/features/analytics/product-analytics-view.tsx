@@ -1,7 +1,10 @@
 import Link from "next/link";
 
-import { GlassPanel } from "@/components/design-system";
+import { Alert } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { cn } from "@/lib/utils";
 import type {
   ProductAnalyticsPeriod,
   ProductAnalyticsSummary,
@@ -19,129 +22,77 @@ const statusLabels: Record<ProductAnalyticsSummary["status"], string> = {
   hidden: "Скрыт",
 };
 
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="min-w-0 rounded-2xl border border-border bg-surface-raised p-4">
-      <p className="text-sm text-foreground/65">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-    </div>
-  );
+function statusTone(status: ProductAnalyticsSummary["status"]) {
+  if (status === "published") return "success" as const;
+  if (status === "hidden") return "warning" as const;
+  return "neutral" as const;
 }
 
-function ProductAnalyticsCard({
-  product,
-  periodLabel,
-}: {
-  product: ProductAnalyticsSummary;
-  periodLabel: string;
-}) {
-  const accessibleLabel = `Товар ${product.title}. Период: ${periodLabel}. Просмотры: ${product.productViews}. Переходы в Telegram: ${product.ctaClicks}. Статус: ${statusLabels[product.status]}.`;
-
-  return (
-    <article
-      aria-label={accessibleLabel}
-      className="min-w-0 rounded-2xl border border-border bg-glass p-4 text-foreground shadow-sm backdrop-blur-xl motion-reduce:backdrop-blur-none forced-colors:backdrop-blur-none"
-    >
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <h3 className="min-w-0 break-words text-base font-semibold">{product.title}</h3>
-        <span className="shrink-0 rounded-full border border-border bg-surface-raised px-3 py-1 text-xs font-medium text-foreground/70">
-          {statusLabels[product.status]}
-        </span>
-      </div>
-      <p className="mt-2 text-sm text-foreground/65">Период: {periodLabel}</p>
-      <div className="mt-4 grid min-w-0 grid-cols-2 gap-3">
-        <Metric label="Просмотры" value={product.productViews} />
-        <Metric label="Переходы в Telegram" value={product.ctaClicks} />
-      </div>
-    </article>
-  );
-}
-
-export function ProductAnalyticsSummaryView({
-  activePeriod,
-  summary,
-}: {
-  activePeriod: ProductAnalyticsPeriod;
-  summary: SellerProductAnalyticsSummary;
-}) {
+export function ProductAnalyticsSummaryView({ activePeriod, summary }: { activePeriod: ProductAnalyticsPeriod; summary: SellerProductAnalyticsSummary }) {
   const periodLabel = periodLabels[activePeriod];
+  const totalViews = summary.products.reduce((total, product) => total + product.productViews, 0);
+  const totalClicks = summary.products.reduce((total, product) => total + product.ctaClicks, 0);
 
   return (
-    <main className="flex flex-col gap-4">
-      <GlassPanel className="p-5">
-        <p className="text-sm text-foreground/60">Аналитика</p>
-        <h1 className="mt-2 break-words text-2xl font-semibold">Аналитика товаров</h1>
-        <p className="mt-3 text-sm leading-6 text-foreground/70">
-          Просмотры карточек и переходы в Telegram по каждому товару.
-        </p>
-      </GlassPanel>
+    <div className="space-y-8">
+      <header className="border-b border-border-strong pb-6">
+        <p className="font-mono text-xs text-primary">АНАЛИТИКА / {activePeriod === "today" ? "01 ДЕНЬ" : "07 ДНЕЙ"}</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">Аналитика товаров</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-secondary">Наблюдаемые просмотры карточек и переходы в Telegram. Это не число отправленных сообщений или продаж.</p>
+      </header>
 
-      <nav aria-label="Период аналитики" className="flex flex-wrap gap-2">
+      <nav aria-label="Период аналитики" className="flex gap-5 border-b border-border">
         {(Object.keys(periodLabels) as ProductAnalyticsPeriod[]).map((period) => {
-          const isActive = period === activePeriod;
+          const active = period === activePeriod;
           return (
-            <Link
-              aria-current={isActive ? "page" : undefined}
-              className={buttonVariants({
-                className: "min-h-11",
-                variant: isActive ? "primary" : "secondary",
-              })}
-              href={`/seller/analytics?period=${period}`}
-              key={period}
-            >
+            <Link aria-current={active ? "page" : undefined} className={cn("relative inline-flex min-h-11 items-center text-sm font-semibold text-ink-secondary hover:text-foreground", active && "text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary")} href={`/seller/analytics?period=${period}`} key={period}>
               {periodLabels[period]}
             </Link>
           );
         })}
       </nav>
 
+      <section aria-label={`Сводка за период: ${periodLabel}`} className="grid gap-6 border-t-[3px] border-foreground py-6 sm:grid-cols-[minmax(0,1fr)_12rem_12rem] sm:items-end">
+        <div>
+          <p className="font-mono text-[clamp(3.5rem,9vw,6rem)] font-semibold leading-none tracking-[-0.07em] tabular-nums">{totalViews}</p>
+          <p className="mt-2 text-sm text-ink-secondary">просмотров товаров · {periodLabel.toLowerCase()}</p>
+        </div>
+        <div className="border-t border-border pt-3 sm:border-t-0 sm:border-l sm:pl-5">
+          <p className="font-mono text-2xl tabular-nums">{totalClicks}</p>
+          <p className="mt-1 text-sm text-ink-secondary">переходов в Telegram</p>
+        </div>
+        <div className="border-t border-border pt-3 sm:border-t-0 sm:border-l sm:pl-5">
+          <p className="font-mono text-2xl tabular-nums">{summary.products.length}</p>
+          <p className="mt-1 text-sm text-ink-secondary">товаров в отчёте</p>
+        </div>
+      </section>
+
       {summary.products.length > 0 ? (
-        <section
-          aria-label={`Аналитика товаров за период: ${periodLabel}`}
-          className="flex min-w-0 flex-col gap-3"
-        >
-          <p className="text-sm text-foreground/65">Период: {periodLabel}</p>
+        <section aria-label={`Аналитика товаров за период: ${periodLabel}`}>
+          <div className="hidden grid-cols-[minmax(0,1fr)_8rem_8rem_8rem] gap-4 border-y border-border py-2 font-mono text-[0.6875rem] text-ink-secondary md:grid">
+            <span>Товар</span><span>Статус</span><span className="text-right">Просмотры</span><span className="text-right">Telegram</span>
+          </div>
           {summary.products.map((product) => (
-            <ProductAnalyticsCard
-              key={product.productId}
-              periodLabel={periodLabel}
-              product={product}
-            />
+            <article aria-label={`Товар ${product.title}. Период: ${periodLabel}. Просмотры: ${product.productViews}. Переходы в Telegram: ${product.ctaClicks}. Статус: ${statusLabels[product.status]}.`} className="grid gap-3 border-b border-border py-4 md:grid-cols-[minmax(0,1fr)_8rem_8rem_8rem] md:items-center md:gap-4" key={product.productId}>
+              <h2 className="break-words font-semibold">{product.title}</h2>
+              <StatusBadge className="w-fit" tone={statusTone(product.status)}>{statusLabels[product.status]}</StatusBadge>
+              <p className="font-mono text-lg tabular-nums md:text-right">{product.productViews}<span className="ml-2 text-xs text-ink-secondary md:hidden">просмотров</span></p>
+              <p className="font-mono text-lg tabular-nums md:text-right">{product.ctaClicks}<span className="ml-2 text-xs text-ink-secondary md:hidden">переходов</span></p>
+            </article>
           ))}
         </section>
       ) : (
-        <GlassPanel className="p-5" role="status">
-          <h2 className="text-xl font-semibold">Пока нет товаров для аналитики</h2>
-          <p className="mt-3 text-sm text-foreground/65">Период: {periodLabel}</p>
-          <p className="mt-2 text-sm leading-6 text-foreground/70">
-            Добавьте товар, чтобы отслеживать его просмотры и переходы в Telegram.
-          </p>
-          <Link className={buttonVariants({ className: "mt-5 w-full" })} href="/seller/products/new">
-            Добавить товар
-          </Link>
-        </GlassPanel>
+        <EmptyState action={<Link className={buttonVariants()} href="/seller/products/new">Добавить товар</Link>} description="После первого товара здесь появятся просмотры карточки и переходы в Telegram." eyebrow={`ПЕРИОД / ${periodLabel.toUpperCase()}`} title="Пока нет товаров для аналитики" />
       )}
-    </main>
+    </div>
   );
 }
 
 export function ProductAnalyticsError({ period }: { period: ProductAnalyticsPeriod }) {
   return (
-    <main>
-      <GlassPanel className="p-5" role="alert">
-        <p className="text-sm text-foreground/60">Аналитика товаров</p>
-        <h1 className="mt-2 text-2xl font-semibold">Не удалось загрузить аналитику</h1>
-        <p className="mt-3 text-sm leading-6 text-foreground/70">
-          Обновите страницу или попробуйте позже. Мы не показываем нулевые значения,
-          пока не уверены, что данные загрузились корректно.
-        </p>
-        <Link
-          className={buttonVariants({ className: "mt-4 w-full" })}
-          href={`/seller/analytics?period=${period}`}
-        >
-          Обновить
-        </Link>
-      </GlassPanel>
-    </main>
+    <Alert titleAs="h1" tone="danger" title="Не удалось загрузить аналитику">
+      <p>Нулевые значения не подменяют ошибку. Обновите запрос или попробуйте позже.</p>
+      <Link className={`${buttonVariants({ variant: "secondary" })} mt-4`} href={`/seller/analytics?period=${period}`}>Обновить</Link>
+    </Alert>
   );
 }

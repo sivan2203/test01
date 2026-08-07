@@ -1,78 +1,78 @@
-# Spine Pair Review — Персональная витрина UX
+# Spine Pair Review — test01
 
 ## Overall verdict
 
-The UX spine pair is now ready for downstream architecture/story use. The previous contract gaps were materially addressed: mockups are linked from both spines, preview-as-buyer is covered as a Key Flow, component vocabulary is mirrored, token references resolve, accessibility details are stronger, and `[ASSUMPTION]` notes were converted into decisions.
-
-No critical, high, or medium findings remain. The remaining items are low-severity implementation follow-ups, mainly optional visual references for product detail/editor and final copy review for deleted/hidden product URLs.
+Пара `DESIGN.md` + `EXPERIENCE.md` готова служить downstream-контрактом для architecture и story-dev: продуктовые имена трассируются, ссылки и токены разрешаются, а визуальные и поведенческие обязанности разделены без load-bearing пробелов. Реализованный frontend подтверждает применимость ключевых решений, но не используется как замена контракту. Открытых critical, high, medium или low findings нет.
 
 ## 1. Flow coverage — strong
 
-PRD UJ-1 through UJ-5 are represented in EXPERIENCE.md Key Flows: seller first launch, buyer Telegram contact, seller analytics check, optional import, and preview-as-buyer. Each flow has a named protagonist, ordered steps, a climax, and a failure/empty path where relevant.
+Проверены все имена из frontmatter sources: UJ-1–UJ-5 и FR-1–FR-22. Все пять UJ представлены одноимёнными Key Flows с названным героем, нумерованными шагами, climax и failure/empty веткой; FR-1–FR-22 дословно трассируются к surfaces/компонентам и оказываются в соответствующих flows или state contracts (`EXPERIENCE.md`, «Трассировка UJ и FR», «Key Flows»).
 
 ### Findings
 
-None.
+Нет.
 
 ## 2. Token completeness — strong
 
-DESIGN.md defines colors, typography, spacing, radius, and component tokens. EXPERIENCE.md references the relevant component/token paths for load-bearing UI behavior. Contrast pairs are stated for normal text and primary CTA combinations.
+Проверены все frontmatter-токены `colors`, `typography`, `rounded`, `spacing`, `components` и все `{path.to.token}` ссылки в обоих документах. Цветовые значения заданы hex, светлая тема объявлена единственной обязательной, все ссылки разрешаются, а load-bearing contrast pairs имеют цели WCAG 2.2 AA/3:1 (`DESIGN.md`, frontmatter и «Colors»).
 
 ### Findings
 
-None.
+Нет.
 
 ## 3. Component coverage — strong
 
-Load-bearing components now have mirrored visual and behavioral coverage: store header, catalog view toggle, product card, product detail media, Telegram CTA, copy fallback, analytics summary/card, product state control, slug editor, import mapper, form field, and empty state.
+Извлечён 31 канонический component name. Все 31 имеют frontmatter entry и содержательную визуальную строку в `DESIGN.md.Components`, а также одноимённую поведенческую строку и разрешимую `{components.*}` ссылку в `EXPERIENCE.md.Component Patterns`; sub-patterns вроде gallery controls, save bar и preview закреплены в родительских компонентах, а не оставлены неименованными.
 
 ### Findings
 
-None.
+Нет.
 
 ## 4. State coverage — strong
 
-State coverage now includes first login, cold loading, incomplete setup, no products, first product success, activation target, draft missing media, save failure, Telegram missing/failure, analytics empty, unknown source, seller preview, bot exclusion, and offline behavior.
+Пройдены все seller и buyer surfaces из IA. Auth, dashboard, product list, wizard/editor/media, conditional import, analytics, settings/preview, storefront, product detail, Telegram handoff, empty и not-found имеют применимые cold-load, empty, validation, pending, error/retry, offline, ownership/privacy и success treatments; focus/disabled/reduced-motion правила заданы сквозными контрактами (`EXPERIENCE.md`, «State Patterns», «Interaction Primitives», «Accessibility Floor»).
 
 ### Findings
 
-None.
+Нет.
 
-## 5. Visual reference coverage — adequate
+## 5. Visual reference coverage — strong
 
-The two existing mockups are linked inline from DESIGN.md and EXPERIENCE.md, with a spines-win-on-conflict rule. Public storefront and seller dashboard are visually anchored.
+`imports/` пуст, `wireframes/` отсутствует, в `mockups/` находятся семь HTML-файлов. Все семь связаны inline из обоих spine с пояснением иллюстрируемой композиции; ранние glass/pill mockups и отличающиеся accent/file limits явно объявлены неконформными, а приоритет spine сформулирован однозначно (`DESIGN.md`, «Layout & Spacing»; `EXPERIENCE.md`, «Foundation»).
 
 ### Findings
 
-- **[low]** Product detail and product editor remain spine-only (§EXPERIENCE.md IA; update-pass-report.md) — This is acceptable for downstream story work, but implementation may benefit from visual references if layout ambiguity appears. *Fix:* add mockups only if implementation review finds ambiguity.
+Нет.
 
 ## 6. Bloat & overspecification — strong
 
-The spines remain concise and contract-shaped. The design prose carries taste; EXPERIENCE.md is mostly tables and behavior rules.
+Документы остаются contract-shaped: `DESIGN.md` несёт визуальный язык и таблицу компонентов, `EXPERIENCE.md` — IA, поведение, состояния, accessibility и journeys; таблица FR traceability полезна downstream-потребителю и не пересказывает требования целиком. Полный transport-level media invariant определён один раз в `media-queue`, остальные упоминания являются короткими ссылками.
 
 ### Findings
 
-None.
+Нет.
 
 ## 7. Inheritance discipline — strong
 
-Sources resolve; Telegram-only, mobile-first, preview exclusion, analytics, and activation/publication decisions are inherited consistently. `[ASSUMPTION]` notes are gone.
+Все шесть `sources` из frontmatter обоих spine разрешаются. UJ/FR names сохранены дословно, доменные границы PRD не переопределены, поздний visual override и текущий sequential upload decision явно зафиксированы, 31 component name идентичен между frontmatter/body/behavior, а все EXPERIENCE→DESIGN ссылки разрешаются по имени (`DESIGN.md` и `EXPERIENCE.md`, frontmatter; `.memlog.md`; `DECISIONS.md`).
 
 ### Findings
 
-- **[low]** Deleted/hidden product URL copy still depends on implementation copy review (§EXPERIENCE.md UX Decisions and Follow-ups; Architecture AD-11) — Architecture defines behavior; UX still needs final microcopy when screens are implemented. *Fix:* handle during story-level UX copy pass.
+Нет.
 
 ## 8. Shape fit — strong
 
-DESIGN.md follows canonical section order. EXPERIENCE.md includes all required sections plus earned Inspiration & Anti-patterns and Responsive & Platform sections.
+`DESIGN.md` содержит все восемь канонических разделов в правильном порядке. `EXPERIENCE.md` содержит все обязательные defaults; Responsive & Platform и Inspiration & Anti-patterns присутствуют по триггерам multi-surface/research, а дополнительные traceability и implementation-decision sections оправданы downstream-потреблением.
 
 ### Findings
 
-None.
+Нет.
 
 ## Mechanical notes
 
-- No `[ASSUMPTION]` tags remain.
-- Mockups are linked from both spines.
-- Component names are mirrored enough for downstream extraction.
-- No critical/high/medium findings.
+- Frontmatter sources: 6/6 разрешаются в существующие файлы; source lists идентичны в обоих spine.
+- Visual references: 7/7 mockups связаны из обоих spine; orphan imports/wireframes отсутствуют.
+- Components: 31/31 совпадают между DESIGN frontmatter, DESIGN Components и EXPERIENCE Component Patterns.
+- Token cross-references: неразрешимых `{path.to.token}` ссылок нет; `{n}`, `{total}`, `{product title}` и `{товаре}` являются microcopy placeholders, а не token paths.
+- Markdown links разрешаются; Mermaid-блоков нет.
+- Проверка реализованного frontend: `npm run test:contracts` — 105/105 passed; это corroborating evidence, не источник истины для verdict.

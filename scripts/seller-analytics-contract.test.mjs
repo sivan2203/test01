@@ -169,24 +169,25 @@ test("seller summary query stays on the SSR user boundary", () => {
   assert.doesNotMatch(query, /service-role/);
 });
 
-test("analytics summary widget exposes primary, secondary, zero and accessible states", () => {
+test("seller dashboard exposes primary, secondary, zero and accessible states", () => {
   const widget = fs.readFileSync(
     path.join(
       projectRoot,
-      "src/features/analytics/analytics-summary-widget.tsx",
+      "src/features/seller-dashboard/seller-dashboard-view.tsx",
     ),
     "utf8",
   );
 
-  assert.match(widget, /Просмотры магазина сегодня/);
+  assert.match(widget, /просмотров витрины сегодня/);
   assert.match(widget, /Просмотры товаров/);
   assert.match(widget, /Переходы в Telegram/);
   assert.match(widget, /Лучший источник/);
   assert.match(widget, /aria-label|aria-labelledby/);
-  assert.match(widget, /router\.refresh/);
+  assert.match(widget, /analyticsFailed/);
+  assert.match(widget, /RetryButton/);
   assert.match(widget, /break-words/);
   assert.match(widget, /Поделитесь ссылкой|Поделиться ссылкой/);
-  assert.doesNotMatch(widget, /7 дней|30 дней|график|chart/i);
+  assert.doesNotMatch(widget, /30 дней|график|chart/i);
 });
 
 test("seller home wires authenticated store and summary states without exposing a public endpoint", () => {
@@ -200,11 +201,11 @@ test("seller home wires authenticated store and summary states without exposing 
 
   assert.match(page, /getCurrentSellerStoreProfile/);
   assert.match(page, /getSellerHomeAnalyticsSummary/);
-  assert.match(page, /AnalyticsSummaryWidget/);
-  assert.match(page, /AnalyticsSummaryError/);
-  assert.match(page, /StoreProfileError/);
-  assert.match(page, /shareLabel/);
-  assert.match(page, /break-words/);
+  assert.match(page, /SellerDashboardView/);
+  assert.match(page, /analyticsFailed/);
+  assert.match(page, /getSellerProducts/);
+  assert.match(page, /productsResult\.status !== "found"/);
+  assert.match(page, /Не удалось загрузить товары/);
   assert.match(page, /redirect\("\/seller\/sign-in/);
   assert.doesNotMatch(page, /api\/analytics/);
 });

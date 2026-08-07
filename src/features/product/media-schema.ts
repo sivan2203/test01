@@ -1,6 +1,8 @@
 export const PRODUCT_MEDIA_BUCKET = "product-media";
 export const PRODUCT_MEDIA_MAX_COUNT = 10;
 export const PRODUCT_MEDIA_MAX_BYTES = 6 * 1024 * 1024;
+export const PRODUCT_MEDIA_MAX_REQUEST_BYTES =
+  PRODUCT_MEDIA_MAX_BYTES + 64 * 1024;
 export const PRODUCT_MEDIA_SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 export const PRODUCT_MEDIA_MIME_TYPES = [
@@ -24,6 +26,18 @@ export type ProductMediaActionState = {
   message: string;
   media: ProductMedia[];
 };
+
+export type ProductMediaUploadResponse =
+  | {
+      status: "success";
+      message: string;
+      media: ProductMedia;
+    }
+  | {
+      status: "error";
+      message: string;
+      media: null;
+    };
 
 export function isProductMediaMimeType(
   value: string,

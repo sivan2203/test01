@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Персональная витрина — фотографии товара и подтверждение удаления</title>
+  <style>
+    /*
+      GOVERNING SPINE / MEMLOG
+      DESIGN.md: Product detail media; Form field; Colors; Shapes; Do's and Don'ts.
+      EXPERIENCE.md: Product create/edit; Product draft missing photo; Product save failed;
+      Interaction Primitives / destructive confirmation; Accessibility Floor / gallery controls.
+      .memlog.md 2026-08-07: immediate local preview; queued/uploading/success/error per file;
+      determinate progress; retry without loss; explicit cover; keyboard/touch reorder;
+      app-native destructive confirmation with Escape, focus trap and focus return.
+    */
+    :root {
+      --paper: #f5f3ee;
+      --surface: #fbfaf7;
+      --ink: #171716;
+      --muted: #676760;
+      --faint: #706f69;
+      --line: #d8d5ce;
+      --line-strong: #b9b6ae;
+      --accent: #3159d8;
+      --success: #1e6b48;
+      --danger: #a4352b;
+      --warning: #815b12;
+      --radius: 8px;
+      --sans: "Onest", "Segoe UI", Arial, sans-serif;
+      --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #dedbd4; color: var(--ink); font: 14px/1.45 var(--sans); }
+    button { font: inherit; cursor: default; }
+    .stage { min-width: 1220px; padding: 28px; }
+    .caption { width: min(1420px, calc(100vw - 56px)); margin: 0 auto 10px; color: #575650; font: 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+    .browser { width: min(1420px, calc(100vw - 56px)); margin: 0 auto; overflow: hidden; border: 1px solid #aba8a1; border-radius: 10px; background: var(--surface); box-shadow: 0 14px 32px rgba(23,23,22,.07); }
+    .chrome { height: 38px; display: grid; grid-template-columns: 85px 1fr 85px; align-items: center; border-bottom: 1px solid var(--line); background: #ece9e3; color: var(--muted); font: 10px var(--mono); }
+    .dots { display: flex; gap: 6px; padding-left: 14px; }
+    .dot { width: 8px; height: 8px; border: 1px solid #9a978f; border-radius: 50%; }
+    .address { justify-self: center; width: 430px; padding: 5px 10px; border: 1px solid #cfcbc3; border-radius: 6px; text-align: center; background: #f6f4ef; }
+    .local { justify-self: end; padding-right: 13px; }
+    .app { min-height: 840px; display: grid; grid-template-columns: 216px 1fr; }
+    .sidebar { padding: 24px 17px; border-right: 1px solid var(--line); background: #efede7; }
+    .brand { padding: 0 7px 20px; border-bottom: 1px solid var(--line); }
+    .brand strong { display: block; margin-top: 5px; font-size: 16px; }
+    .mono { color: var(--muted); font: 10px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+    .side-back { display: block; padding: 17px 7px; color: var(--ink); text-decoration: none; }
+    .side-product { margin: 8px 7px 0; padding: 15px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .side-product b { display: block; margin: 4px 0; }
+    .step-list { margin-top: 18px; display: grid; gap: 3px; }
+    .step-item { display: grid; grid-template-columns: 24px 1fr; min-height: 38px; align-items: center; padding: 0 7px; color: var(--muted); border-left: 2px solid transparent; }
+    .step-item.active { color: var(--ink); border-left-color: var(--accent); background: #e4e2dc; font-weight: 650; }
+    .step-index { font: 9px var(--mono); }
+    .main { padding: 31px 39px 42px; background: var(--paper); }
+    .topbar { display: flex; justify-content: space-between; align-items: start; padding-bottom: 22px; border-bottom: 1px solid var(--line-strong); }
+    h1 { margin: 6px 0 0; font-size: 29px; line-height: 1.12; letter-spacing: -.035em; }
+    .step-label { color: var(--accent); font: 10px var(--mono); letter-spacing: .07em; text-transform: uppercase; }
+    .button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 7px; background: transparent; color: var(--ink); font-weight: 650; }
+    .button.primary { border-color: var(--accent); background: var(--accent); color: white; }
+    .button.danger { border-color: #c89d98; color: var(--danger); }
+    .intro { display: grid; grid-template-columns: minmax(430px, 1fr) 310px; gap: 42px; padding: 26px 0; border-bottom: 1px solid var(--line-strong); }
+    h2 { margin: 0 0 7px; font-size: 18px; letter-spacing: -.02em; }
+    .intro p { margin: 0; color: var(--muted); max-width: 620px; }
+    .limits { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; align-content: start; }
+    .limit { display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 6px; color: var(--muted); font-size: 12px; }
+    .limit strong { color: var(--ink); font: 10px var(--mono); }
+    .dropzone { display: flex; justify-content: space-between; align-items: center; margin: 22px 0; min-height: 74px; padding: 14px 16px; border: 1px dashed var(--line-strong); border-radius: var(--radius); background: transparent; }
+    .dropzone strong { display: block; }
+    .dropzone span { color: var(--muted); font-size: 12px; }
+    .queue-head { display: grid; grid-template-columns: 1fr auto; align-items: end; padding-bottom: 10px; border-bottom: 3px solid var(--ink); }
+    .queue-count { font: 10px var(--mono); color: var(--muted); }
+    .media-row { display: grid; grid-template-columns: 92px minmax(280px, 1fr) 180px 156px 56px; gap: 18px; align-items: center; min-height: 108px; border-bottom: 1px solid var(--line); }
+    .thumb { position: relative; width: 82px; height: 82px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 7px; background: #d9c8b2; }
+    .thumb::before { content: ""; position: absolute; left: 18px; top: 14px; width: 44px; height: 47px; border: 2px solid rgba(70,50,32,.46); border-radius: 22px 22px 8px 8px; }
+    .thumb::after { content: ""; position: absolute; left: 38px; bottom: 5px; width: 4px; height: 20px; background: rgba(70,50,32,.46); }
+    .thumb.side { background: #d7d2c8; }
+    .thumb.detail { background: #c8d0d2; }
+    .thumb.package { background: #d1c6b8; }
+    .file-name { font-weight: 650; }
+    .file-meta { margin-top: 4px; color: var(--muted); font: 10px var(--mono); }
+    .cover-badge { display: inline-block; margin-top: 8px; padding: 3px 6px; border: 1px solid #82a692; border-radius: 999px; color: var(--success); font: 9px var(--mono); text-transform: uppercase; }
+    .state { font: 10px var(--mono); text-transform: uppercase; letter-spacing: .04em; }
+    .state.success { color: var(--success); }
+    .state.uploading { color: var(--accent); }
+    .state.error { color: var(--danger); }
+    .state.queued { color: var(--warning); }
+    .state-note { margin-top: 6px; color: var(--muted); font-size: 11px; }
+    .progress { margin-top: 8px; height: 3px; background: var(--line); }
+    .progress span { display: block; width: 64%; height: 100%; background: var(--accent); }
+    .controls { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+    .icon-button { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink); }
+    .text-action { min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--accent); font-weight: 650; }
+    .delete { width: 36px; height: 36px; border: 1px solid #ddc1be; border-radius: 6px; background: transparent; color: var(--danger); }
+    .footer { display: flex; justify-content: space-between; padding-top: 24px; }
+    .dialog-demo { position: relative; width: min(1420px, calc(100vw - 56px)); min-height: 335px; margin: 24px auto 0; overflow: hidden; border: 1px solid #aba8a1; border-radius: 10px; background: #c8c5be; }
+    .dialog-underlay { min-height: 335px; display: grid; grid-template-columns: 216px 1fr; opacity: .33; filter: grayscale(.45); }
+    .under-side { background: #efede7; border-right: 1px solid var(--line); }
+    .under-main { background: var(--paper); padding: 38px 40px; }
+    .under-line { height: 13px; max-width: 620px; margin-bottom: 14px; background: #aaa79f; }
+    .under-line.short { max-width: 320px; }
+    dialog[open] { position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 440px; margin: 0; padding: 0; border: 1px solid var(--line-strong); border-radius: 9px; color: var(--ink); background: var(--surface); box-shadow: 0 18px 48px rgba(23,23,22,.18); }
+    .dialog-top { display: flex; justify-content: space-between; align-items: start; padding: 20px 21px 16px; border-bottom: 1px solid var(--line); }
+    .dialog-top h2 { margin: 0; }
+    .dialog-close { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 6px; background: transparent; }
+    .dialog-body { padding: 18px 21px; color: var(--muted); }
+    .dialog-body strong { color: var(--ink); }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 21px 20px; }
+    .focus-default { outline: 3px solid rgba(49,89,216,.24); outline-offset: 2px; border-color: var(--accent); }
+    .dialog-caption { position: absolute; left: 18px; top: 17px; color: #474640; font: 10px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="caption">Key screen 03A · Product photos · Per-file states, reorder and explicit cover</div>
+    <section class="browser" aria-label="Управление фотографиями товара">
+      <div class="chrome" aria-hidden="true"><div class="dots"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div><div class="address">app.vitrina.local/seller/products/new/photos</div><div class="local">LOCAL</div></div>
+      <div class="app">
+        <aside class="sidebar"><div class="brand"><span class="mono">Витрина / Товары</span><strong>Anna Light Studio</strong></div><a class="side-back" href="#">← Закрыть мастер</a><div class="side-product"><span class="mono">Черновик</span><b>Лампа Luna</b><span>4 900 ₽ · в наличии</span></div><nav class="step-list" aria-label="Этапы создания"><div class="step-item"><span class="step-index">01</span>Основное</div><div class="step-item"><span class="step-index">02</span>Продажа</div><div class="step-item active" aria-current="step"><span class="step-index">03</span>Фото</div><div class="step-item"><span class="step-index">04</span>Проверка</div></nav></aside>
+        <main class="main">
+          <header class="topbar"><div><div class="step-label">Шаг 3 из 4</div><h1>Фотографии товара</h1></div><button class="button">Сохранить черновик</button></header>
+          <section class="intro"><div><h2>Покажите товар с разных сторон</h2><p>Миниатюры появляются сразу после выбора. Первая фотография — обложка каталога; её можно изменить в любой момент.</p></div><div class="limits"><div class="limit"><span>Форматы</span><strong>JPG · PNG · WEBP</strong></div><div class="limit"><span>Количество</span><strong>до 10</strong></div><div class="limit"><span>Размер</span><strong>до 10 МБ</strong></div><div class="limit"><span>Сейчас</span><strong>4 из 10</strong></div></div></section>
+          <div class="dropzone"><div><strong>Перетащите фотографии сюда</strong><span>или выберите файлы на устройстве</span></div><button class="button primary">Выбрать файлы</button></div>
+          <div class="queue-head"><h2>Очередь загрузки</h2><span class="queue-count">4 файла · 1 готов · 1 ошибка</span></div>
+          <section class="media-row"><div class="thumb" aria-label="Миниатюра лампы Luna"></div><div><div class="file-name">luna-main.webp</div><div class="file-meta">1600 × 1600 · 1,8 МБ</div><span class="cover-badge">Обложка</span></div><div><div class="state success">✓ Загружено</div><div class="state-note">Сохранено в товаре</div></div><div class="controls"><button class="icon-button" aria-label="Переместить ниже">↓</button><button class="text-action">Обложка</button></div><button class="delete" aria-label="Удалить фотографию">×</button></section>
+          <section class="media-row"><div class="thumb side" aria-label="Миниатюра лампы сбоку"></div><div><div class="file-name">luna-side.jpg</div><div class="file-meta">1800 × 1800 · 2,4 МБ</div></div><div><div class="state uploading">Загрузка · 64%</div><div class="progress" aria-label="Загружено 64 процента"><span></span></div></div><div class="controls"><button class="icon-button" aria-label="Переместить выше">↑</button><button class="icon-button" aria-label="Переместить ниже">↓</button></div><button class="delete" aria-label="Отменить загрузку">×</button></section>
+          <section class="media-row"><div class="thumb detail" aria-label="Миниатюра детали лампы"></div><div><div class="file-name">luna-detail.png</div><div class="file-meta">2048 × 2048 · 3,1 МБ</div></div><div><div class="state error">Ошибка загрузки</div><div class="state-note">Соединение прервано. Файл сохранён.</div></div><div class="controls"><button class="text-action">Повторить</button></div><button class="delete" aria-label="Удалить фотографию">×</button></section>
+          <section class="media-row"><div class="thumb package" aria-label="Миниатюра упаковки"></div><div><div class="file-name">luna-package.webp</div><div class="file-meta">1200 × 1200 · 980 КБ</div></div><div><div class="state queued">В очереди</div><div class="state-note">Начнём после текущего файла</div></div><div class="controls"><button class="icon-button" aria-label="Переместить выше">↑</button><button class="icon-button" aria-label="Переместить ниже">↓</button></div><button class="delete" aria-label="Удалить фотографию">×</button></section>
+          <footer class="footer"><button class="button">← Назад</button><button class="button primary">Продолжить к проверке</button></footer>
+        </main>
+      </div>
+    </section>
+    <div class="caption" style="margin-top:24px">Key screen 03B · Destructive dialog · Initial focus on «Отмена»</div>
+    <section class="dialog-demo" aria-label="Состояние подтверждения удаления фотографии">
+      <div class="dialog-caption">Background inert · Escape closes · focus returns to delete trigger</div>
+      <div class="dialog-underlay" aria-hidden="true"><div class="under-side"></div><div class="under-main"><div class="under-line short"></div><div class="under-line"></div><div class="under-line"></div><div class="under-line short"></div></div></div>
+      <dialog open aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-description">
+        <div class="dialog-top"><div><span class="mono">Необратимое действие</span><h2 id="delete-title">Удалить фотографию?</h2></div><button class="dialog-close" aria-label="Закрыть диалог">×</button></div>
+        <div class="dialog-body" id="delete-description"><strong>luna-detail.png</strong> исчезнет из товара. Остальные фотографии и порядок сохранятся.</div>
+        <div class="dialog-actions"><button class="button focus-default">Отмена</button><button class="button danger">Удалить фотографию</button></div>
+      </dialog>
+    </section>
+  </div>
+</body>
+</html>

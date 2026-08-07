@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { GlassPanel } from "@/components/design-system";
+import Link from "next/link";
+
+import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   getSellerProductAnalyticsSummary,
   parseProductAnalyticsPeriod,
@@ -11,6 +15,7 @@ import {
 } from "@/features/analytics/product-analytics-view";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Аналитика" };
 
 type SellerAnalyticsPageProps = {
   searchParams: Promise<{
@@ -32,15 +37,7 @@ export default async function SellerAnalyticsPage({
 
   if (result.status === "store_not_found") {
     return (
-      <main>
-        <GlassPanel className="p-5">
-          <p className="text-sm text-foreground/60">Аналитика товаров</p>
-          <h1 className="mt-2 text-2xl font-semibold">Сначала создайте витрину</h1>
-          <p className="mt-3 text-sm leading-6 text-foreground/70">
-            Создайте витрину, чтобы добавлять товары и видеть их аналитику.
-          </p>
-        </GlassPanel>
-      </main>
+      <EmptyState action={<Link className={buttonVariants()} href="/seller/store">Создать витрину</Link>} description="После настройки можно добавлять товары и видеть их просмотры." eyebrow="АНАЛИТИКА / НУЖЕН МАГАЗИН" title="Сначала создайте витрину" titleAs="h1" />
     );
   }
 

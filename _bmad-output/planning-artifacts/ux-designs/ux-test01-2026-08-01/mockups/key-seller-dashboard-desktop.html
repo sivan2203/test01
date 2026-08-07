@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Персональная витрина — seller dashboard desktop</title>
+  <style>
+    /*
+      GOVERNING SPINE / MEMLOG
+      DESIGN.md: Brand & Style; Colors; Typography; Layout & Spacing; Shapes; Components.
+      EXPERIENCE.md: Information Architecture / Seller home dashboard; Analytics summary widget;
+      State Patterns / No analytics today; Responsive & Platform; Flow 3 — Seller checks today's signal.
+      .memlog.md 2026-08-07: neo-Swiss editorial-tech override; Onest + mono metadata;
+      desktop sidebar; dense operational dashboard; one cobalt accent; no cardification.
+    */
+    :root {
+      --paper: #f5f3ee;
+      --surface: #fbfaf7;
+      --ink: #171716;
+      --muted: #676760;
+      --faint: #706f69;
+      --line: #d8d5ce;
+      --line-strong: #b9b6ae;
+      --accent: #3159d8;
+      --success: #1e6b48;
+      --radius: 8px;
+      --sans: "Onest", "Segoe UI", Arial, sans-serif;
+      --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #dedbd4;
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    button, a { font: inherit; }
+    button { cursor: default; }
+    .stage { min-width: 1180px; padding: 28px; }
+    .caption {
+      width: min(1400px, calc(100vw - 56px));
+      margin: 0 auto 10px;
+      color: #575650;
+      font: 11px/1.3 var(--mono);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .browser {
+      width: min(1400px, calc(100vw - 56px));
+      min-height: 850px;
+      margin: 0 auto;
+      overflow: hidden;
+      border: 1px solid #aba8a1;
+      border-radius: 10px;
+      background: var(--surface);
+      box-shadow: 0 16px 36px rgba(23, 23, 22, .08);
+    }
+    .chrome {
+      height: 38px;
+      display: grid;
+      grid-template-columns: 90px 1fr 90px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      background: #ece9e3;
+      color: var(--muted);
+      font: 11px var(--mono);
+    }
+    .dots { display: flex; gap: 6px; padding-left: 14px; }
+    .dot { width: 8px; height: 8px; border: 1px solid #9a978f; border-radius: 50%; }
+    .address { justify-self: center; width: 440px; padding: 5px 12px; border: 1px solid #cfcbc3; border-radius: 6px; text-align: center; background: #f6f4ef; }
+    .secure { justify-self: end; padding-right: 14px; }
+    .app { min-height: 812px; display: grid; grid-template-columns: 230px 1fr; }
+    .sidebar {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 18px 18px;
+      border-right: 1px solid var(--line);
+      background: #efede7;
+    }
+    .brand { padding: 0 8px 24px; border-bottom: 1px solid var(--line); }
+    .brand-kicker { font: 10px var(--mono); letter-spacing: .12em; color: var(--accent); }
+    .brand-name { margin-top: 7px; font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+    .nav { margin-top: 22px; display: grid; gap: 4px; }
+    .nav-item {
+      display: grid;
+      grid-template-columns: 24px 1fr auto;
+      align-items: center;
+      min-height: 40px;
+      padding: 0 9px;
+      border-left: 2px solid transparent;
+      color: #54534e;
+      text-decoration: none;
+    }
+    .nav-item.active { border-left-color: var(--accent); color: var(--ink); background: #e4e2dc; font-weight: 650; }
+    .nav-index { font: 10px var(--mono); color: var(--faint); }
+    .nav-count { font: 10px var(--mono); }
+    .sidebar-meta { margin-top: auto; padding: 16px 8px 0; border-top: 1px solid var(--line); }
+    .seller { font-weight: 650; }
+    .handle { margin-top: 3px; color: var(--muted); font: 11px var(--mono); }
+    .main { padding: 32px 40px 46px; background: var(--paper); }
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 22px; border-bottom: 1px solid var(--line-strong); }
+    .eyebrow { color: var(--muted); font: 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+    h1 { margin: 7px 0 0; font-size: 31px; line-height: 1.1; letter-spacing: -.035em; }
+    .actions { display: flex; align-items: center; gap: 8px; }
+    .button { min-height: 40px; padding: 0 15px; border: 1px solid var(--line-strong); border-radius: 7px; color: var(--ink); background: transparent; font-weight: 650; }
+    .button.primary { border-color: var(--accent); background: var(--accent); color: white; }
+    .summary { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(340px, .8fr); gap: 44px; padding: 30px 0 34px; border-bottom: 1px solid var(--line-strong); }
+    .section-heading { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
+    h2 { margin: 0; font-size: 17px; letter-spacing: -.015em; }
+    .period { color: var(--muted); font: 10px var(--mono); letter-spacing: .05em; }
+    .metric-lead { display: grid; grid-template-columns: 1fr 1fr; align-items: end; padding: 3px 0 24px; border-bottom: 1px solid var(--line); }
+    .metric-number { font-size: 72px; line-height: .86; font-weight: 680; letter-spacing: -.06em; }
+    .metric-context { padding-bottom: 2px; color: var(--muted); }
+    .metric-context strong { display: block; color: var(--ink); font-weight: 650; }
+    .metric-row { display: grid; grid-template-columns: 1fr 120px 120px; align-items: center; min-height: 52px; border-bottom: 1px solid var(--line); }
+    .metric-row:last-child { border-bottom: 0; }
+    .metric-label { color: var(--muted); }
+    .metric-value { font: 18px var(--mono); text-align: right; }
+    .metric-delta { color: var(--success); font: 10px var(--mono); text-align: right; }
+    .attention { border-top: 3px solid var(--ink); }
+    .attention-head { display: flex; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--line-strong); }
+    .attention-count { color: var(--accent); font: 11px var(--mono); }
+    .task { display: grid; grid-template-columns: 27px 1fr auto; gap: 10px; align-items: start; padding: 16px 0; border-bottom: 1px solid var(--line); }
+    .task-index { color: var(--faint); font: 10px var(--mono); padding-top: 2px; }
+    .task-title { font-weight: 650; }
+    .task-note { margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .task-link { color: var(--accent); font-weight: 650; }
+    .products { padding-top: 28px; }
+    .table-head, .product-row { display: grid; grid-template-columns: minmax(280px, 1.7fr) 120px 120px 110px 92px; gap: 16px; align-items: center; }
+    .table-head { min-height: 34px; border-bottom: 1px solid var(--line-strong); color: var(--muted); font: 10px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+    .product-row { min-height: 68px; border-bottom: 1px solid var(--line); }
+    .product { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; }
+    .thumb { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 6px; display: grid; place-items: center; background: #d9c8b2; color: #5d4936; font: 13px var(--mono); }
+    .thumb.second { background: #d6d1c8; color: #4d4b47; }
+    .thumb.third { background: #c8d0d2; color: #394649; }
+    .product-name { font-weight: 650; }
+    .product-id { color: var(--muted); font: 10px var(--mono); margin-top: 3px; }
+    .cell { font: 12px var(--mono); }
+    .status { justify-self: start; padding: 4px 7px; border: 1px solid var(--line-strong); border-radius: 999px; font: 9px var(--mono); text-transform: uppercase; letter-spacing: .04em; }
+    .status.live { border-color: #82a692; color: var(--success); }
+    .more { justify-self: end; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 6px; background: transparent; }
+    @media (max-width: 1220px) { .stage { transform-origin: top left; } .main { padding-inline: 30px; } }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="caption">Key screen 01 · Seller dashboard · Desktop 1440</div>
+    <section class="browser" aria-label="Макет кабинета продавца">
+      <div class="chrome" aria-hidden="true">
+        <div class="dots"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
+        <div class="address">app.vitrina.local/seller</div>
+        <div class="secure">LOCAL</div>
+      </div>
+      <div class="app">
+        <aside class="sidebar">
+          <div class="brand"><div class="brand-kicker">ВИТРИНА / 01</div><div class="brand-name">Anna Light Studio</div></div>
+          <nav class="nav" aria-label="Кабинет продавца">
+            <a class="nav-item active" href="#" aria-current="page"><span class="nav-index">01</span><span>Сводка</span></a>
+            <a class="nav-item" href="#"><span class="nav-index">02</span><span>Товары</span><span class="nav-count">18</span></a>
+            <a class="nav-item" href="#"><span class="nav-index">03</span><span>Аналитика</span></a>
+            <a class="nav-item" href="#"><span class="nav-index">04</span><span>Магазин</span></a>
+          </nav>
+          <div class="sidebar-meta"><div class="seller">Анна Морозова</div><div class="handle">@anna_light · опубликован</div></div>
+        </aside>
+        <main class="main">
+          <header class="topbar">
+            <div><div class="eyebrow">Пятница · 07 августа · 18:42</div><h1>Добрый вечер, Анна</h1></div>
+            <div class="actions"><button class="button">Посмотреть витрину</button><button class="button primary">Добавить товар</button></div>
+          </header>
+          <section class="summary">
+            <div>
+              <div class="section-heading"><h2>Сигнал за сегодня</h2><span class="period">00:00—18:42 · MSK</span></div>
+              <div class="metric-lead">
+                <div><div class="metric-number">42</div><div class="metric-label">просмотра витрины</div></div>
+                <div class="metric-context"><strong>Лучший источник — Telegram</strong>24 перехода · 57% трафика</div>
+              </div>
+              <div class="metric-row"><span class="metric-label">Просмотры товаров</span><span class="metric-value">67</span><span class="metric-delta">+18%</span></div>
+              <div class="metric-row"><span class="metric-label">Нажатия «Связаться»</span><span class="metric-value">9</span><span class="metric-delta">+3 сегодня</span></div>
+              <div class="metric-row"><span class="metric-label">Конверсия просмотра в контакт</span><span class="metric-value">13,4%</span><span class="metric-delta">наблюдаемая</span></div>
+            </div>
+            <aside class="attention">
+              <div class="attention-head"><h2>Требует внимания</h2><span class="attention-count">03</span></div>
+              <div class="task"><span class="task-index">01</span><div><div class="task-title">У двух товаров нет фото</div><div class="task-note">Черновики нельзя опубликовать без обложки.</div></div><span class="task-link">Открыть</span></div>
+              <div class="task"><span class="task-index">02</span><div><div class="task-title">Бра Soft закончилось</div><div class="task-note">Товар виден, покупатель может уточнить сроки.</div></div><span class="task-link">Проверить</span></div>
+              <div class="task"><span class="task-index">03</span><div><div class="task-title">Описание витрины не заполнено</div><div class="task-note">Добавьте одну строку о мастерской.</div></div><span class="task-link">Добавить</span></div>
+            </aside>
+          </section>
+          <section class="products">
+            <div class="section-heading"><h2>Последние товары</h2><span class="task-link">Все товары →</span></div>
+            <div class="table-head"><span>Товар</span><span>Статус</span><span>Цена</span><span>Просмотры</span><span></span></div>
+            <div class="product-row"><div class="product"><div class="thumb">LU</div><div><div class="product-name">Лампа Luna</div><div class="product-id">PRD-018 · изменён 16:34</div></div></div><span class="status live">Опубликован</span><span class="cell">4 900 ₽</span><span class="cell">31</span><button class="more" aria-label="Действия с товаром">•••</button></div>
+            <div class="product-row"><div class="product"><div class="thumb second">OR</div><div><div class="product-name">Настольная Orb</div><div class="product-id">PRD-017 · изменён вчера</div></div></div><span class="status live">Опубликован</span><span class="cell">3 700 ₽</span><span class="cell">22</span><button class="more" aria-label="Действия с товаром">•••</button></div>
+            <div class="product-row"><div class="product"><div class="thumb third">SO</div><div><div class="product-name">Бра Soft</div><div class="product-id">PRD-016 · изменён 05 авг.</div></div></div><span class="status">Нет в наличии</span><span class="cell">по запросу</span><span class="cell">14</span><button class="more" aria-label="Действия с товаром">•••</button></div>
+          </section>
+        </main>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
