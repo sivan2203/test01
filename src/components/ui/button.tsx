@@ -8,11 +8,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-primary text-primary-foreground hover:bg-[#1948cf]",
+        primary:
+          "bg-button-primary text-button-primary-foreground hover:bg-button-primary-hover hover:text-button-primary-hover-foreground",
         secondary:
           "border-border-strong bg-surface-raised text-foreground hover:bg-surface-muted",
         telegram:
-          "bg-primary text-primary-foreground hover:bg-[#1948cf]",
+          "bg-button-primary text-button-primary-foreground hover:bg-button-primary-hover hover:text-button-primary-hover-foreground",
         ghost: "text-foreground hover:bg-surface-muted",
         destructive:
           "border-destructive/45 bg-surface-raised text-destructive hover:bg-destructive-surface",

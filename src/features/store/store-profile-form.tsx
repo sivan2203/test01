@@ -678,7 +678,7 @@ export function StoreProfileForm({ initialState }: StoreProfileFormProps) {
                   aria-invalid={Boolean(avatarError)}
                   className={cn(
                     fieldControlClassName,
-                    "h-auto py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground",
+                    "h-auto py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-button-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-button-primary-foreground",
                   )}
                   id="store-avatar"
                   name="avatar"

@@ -14,6 +14,10 @@
   --ring: #2457e6;
   --primary: #2457e6;
   --primary-foreground: #ffffff;
+  --button-primary: #171716;
+  --button-primary-hover: #2d2d2b;
+  --button-primary-foreground: #ffffff;
+  --button-primary-hover-foreground: #ffffff;
   --success: #1e6b48;
   --success-surface: #eaf3ed;
   --warning: #7a570d;
@@ -37,7 +41,11 @@
   --color-ring: var(--ring);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-telegram: var(--primary);
+  --color-button-primary: var(--button-primary);
+  --color-button-primary-hover: var(--button-primary-hover);
+  --color-button-primary-foreground: var(--button-primary-foreground);
+  --color-button-primary-hover-foreground: var(--button-primary-hover-foreground);
+  --color-telegram: var(--button-primary);
   --color-success: var(--success);
   --color-success-surface: var(--success-surface);
   --color-warning: var(--warning);
@@ -141,6 +149,10 @@ dialog::backdrop {
     --ring: Highlight;
     --primary: Highlight;
     --primary-foreground: HighlightText;
+    --button-primary: CanvasText;
+    --button-primary-hover: Highlight;
+    --button-primary-foreground: Canvas;
+    --button-primary-hover-foreground: HighlightText;
     --success: CanvasText;
     --warning: CanvasText;
     --destructive: CanvasText;

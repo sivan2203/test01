@@ -9,7 +9,7 @@ sources:
   - DECISIONS.md
   - RESEARCH.md
   - AUDIT.md
-updated: 2026-08-07
+updated: 2026-08-08
 colors:
   surface-base: '#F5F3EE'
   surface-raised: '#FBFAF7'
@@ -23,6 +23,8 @@ colors:
   border-strong: '#88857E'
   accent-cobalt: '#2457E6'
   on-accent: '#FFFFFF'
+  action-black: '#171716'
+  action-black-hover: '#2D2D2B'
   success: '#1E6B48'
   success-surface: '#EAF3ED'
   warning: '#7A570D'
@@ -102,7 +104,7 @@ spacing:
   section-gap: 32px
 components:
   button:
-    primary-background: '{colors.accent-cobalt}'
+    primary-background: '{colors.action-black}'
     primary-foreground: '{colors.on-accent}'
     secondary-background: '{colors.surface-raised}'
     secondary-foreground: '{colors.ink-primary}'
@@ -257,14 +259,14 @@ components:
 
 ## Brand & Style
 
-Персональная витрина — не маркетплейс и не тяжёлый e-commerce кабинет. Это спокойный переход от социальной публикации к понятному товару и разговору с продавцом. Внешний язык — **neo-Swiss editorial-tech**: строгая сетка, ясная типографическая иерархия, тёплая бумажная поверхность, тонкие правила и один кобальтовый сигнал действия.
+Персональная витрина — не маркетплейс и не тяжёлый e-commerce кабинет. Это спокойный переход от социальной публикации к понятному товару и разговору с продавцом. Внешний язык — **neo-Swiss editorial-tech**: строгая сетка, ясная типографическая иерархия, тёплая бумажная поверхность, тонкие правила, чёрные action-кнопки и один кобальтовый сигнал состояния.
 
 Публичная часть и кабинет используют общие токены, но разную плотность:
 
 - **Витрина покупателя** редакционная: крупное название, большие фотографии, спокойный ритм и один очевидный CTA.
 - **Кабинет продавца** операционный: компактные строки, видимые статусы, sidebar на desktop, минимум контейнеров и один главный action на поверхности.
 
-`#2457E6` обозначает действие, фокус и активное положение. Он не служит декором. Telegram не создаёт вторую синюю палитру: назначение действия сообщают текст и иконка.
+`#171716` задаёт все залитые primary/Telegram action-кнопки; `#2457E6` остаётся для фокуса, ссылок, прогресса и активного положения. Ни один из цветов не служит декором. Telegram не создаёт отдельную синюю палитру: назначение действия сообщают текст и иконка.
 
 Liquid glass, декоративный blur, градиенты, неон, cardification и pill-everywhere не входят в язык системы. Светлая тема обязательна; автоматическое переключение в недизайненную dark theme запрещено.
 
@@ -275,13 +277,14 @@ Liquid glass, декоративный blur, градиенты, неон, cardi
 - **Muted Paper (`{colors.surface-muted}`)** — navigation rail, skeleton и редкие вторичные зоны; не фон для каждой секции.
 - **Graphite (`{colors.ink-primary}`)** — заголовки, основной текст и structural rules.
 - **Secondary Ink (`{colors.ink-secondary}`)** — пояснения и метаданные. `{colors.ink-disabled}` применяется к действительно недоступным контролам и placeholder-тексту с контрастом не ниже 4.5:1, но не к обычному body copy.
-- **Cobalt (`{colors.accent-cobalt}`)** — primary action, focus, active navigation и текущий шаг.
+- **Action Black (`{colors.action-black}`)** — заливка всех primary/Telegram кнопок; hover использует `{colors.action-black-hover}`.
+- **Cobalt (`{colors.accent-cobalt}`)** — focus, links, active navigation, progress и текущий шаг; не заливка кнопки.
 - **Semantic colors** — `{colors.success}`, `{colors.warning}`, `{colors.danger}` всегда сопровождаются текстом или иконкой. Мягкие semantic surfaces не превращаются в цветные карточки.
 
 Load-bearing contrast pairs:
 
 - `{colors.ink-primary}` и `{colors.ink-secondary}` на `{colors.surface-base}` или `{colors.surface-raised}` должны проходить WCAG 2.2 AA для normal text;
-- `{colors.on-accent}` на `{colors.accent-cobalt}` — не ниже 4.5:1;
+- `{colors.on-accent}` на `{colors.action-black}` — не ниже 4.5:1 для кнопочного текста;
 - `{colors.accent-cobalt}` на `{colors.surface-base}` — не ниже 4.5:1 для текста и активных markers;
 - focus, borders контролов и semantic icons — не ниже 3:1 к соседней поверхности.
 
@@ -355,7 +358,7 @@ Load-bearing contrast pairs:
 
 | Компонент | Визуальный контракт |
 |---|---|
-| `button` | Primary — `{colors.accent-cobalt}`/`{colors.on-accent}`; secondary — raised/transparent с strong border; destructive — danger text/border. Высота не меньше 44px, radius `{rounded.md}`. |
+| `button` | Primary и Telegram — `{colors.action-black}`/`{colors.on-accent}`; secondary — raised/transparent с strong border; destructive — danger text/border. Высота не меньше 44px, radius `{rounded.md}`. |
 | `icon-button` | 44×44px, видимая рамка, однозначная иконка; destructive variant использует danger вместе с accessible label. |
 | `seller-shell` | Warm Paper, fluid workspace, hairline boundaries; не помещать весь route в одну карточку. |
 | `seller-navigation` | Muted rail на desktop, solid bottom bar на mobile; active state = cobalt marker + stronger text, не залитая pill. |
@@ -380,7 +383,7 @@ Load-bearing contrast pairs:
 | `catalog-view-toggle` | List/grid как compact segmented text controls; active marker и `aria-pressed`, не декоративная capsule. |
 | `product-card` | Изображение доминирует; title/price/CTA следуют в reading order. Разделитель вместо тяжёлой card shadow. |
 | `product-detail-media` | Большая media area, position counter и видимые controls; controls контрастны на конкретной фотографии. |
-| `telegram-cta` | Общий cobalt primary style, короткий видимый label `Связаться о товаре`; accessible name добавляет товар и destination: `Связаться о товаре «…» в Telegram`. Назначение определяется текстом, не отдельным оттенком синего. |
+| `telegram-cta` | Общий чёрный primary style, короткий видимый label `Связаться о товаре`; accessible name добавляет товар и destination: `Связаться о товаре «…» в Telegram`. Назначение определяется текстом, не отдельным brand color. |
 | `copy-message-fallback` | Solid bordered panel с readonly message и action `Скопировать текст сообщения`. |
 | `skeleton` | Повторяет геометрию будущего контента, neutral muted surface, без градиента; при reduced motion статичен. |
 | `empty-state` | Встраивается вместо пустой структуры: короткий заголовок, причина и один следующий action; без stock illustration. |
@@ -392,7 +395,7 @@ Load-bearing contrast pairs:
 | Do | Don't |
 |---|---|
 | Строить иерархию grid, type и rules | Оборачивать каждый блок в rounded card |
-| Использовать cobalt для action, focus и active state | Рассыпать cobalt по декоративным подписям и фонам |
+| Использовать cobalt для links, focus, progress и active markers | Рассыпать cobalt по кнопкам, декоративным подписям и фонам |
 | Давать публичным фото и названию editorial scale | Делать seller admin таким же крупным и разреженным |
 | Показывать статусы текстом, иконкой и semantic color | Кодировать success/error одним цветом |
 | Оставлять 6–10px radius и прямоугольный характер | Делать все кнопки, поля и navigation pills |

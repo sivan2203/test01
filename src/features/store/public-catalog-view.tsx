@@ -203,7 +203,7 @@ export function PublicCatalogView({
             return (
               <Button
                 aria-pressed={isActive}
-                className={cn("relative min-w-16 rounded-none border-0 bg-transparent px-0 text-xs text-ink-secondary hover:bg-transparent hover:text-foreground", isActive && "text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary")}
+                className={cn("relative min-w-16 rounded-none border-0 bg-transparent px-0 text-xs text-ink-secondary hover:bg-transparent hover:text-foreground", isActive && "text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-button-primary")}
                 key={mode}
                 onClick={() => handleViewChange(mode)}
                 size="compact"

@@ -39,7 +39,11 @@ export function StoreDirtyBar({
         >
           Отменить
         </Button>
-        <Button disabled={pending} type="submit">
+        <Button
+          className="border-button-primary-foreground"
+          disabled={pending}
+          type="submit"
+        >
           {pending ? "Сохраняем…" : "Сохранить"}
         </Button>
       </div>

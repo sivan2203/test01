@@ -55,6 +55,20 @@ test("the implemented visual language keeps the canonical light tokens and typog
   assert.match(globals, /--surface-raised: #fbfaf7/i);
   assert.match(globals, /--foreground: #171716/i);
   assert.match(globals, /--primary: #2457e6/i);
+  assert.match(globals, /--button-primary: #171716/i);
+  assert.match(globals, /--button-primary-hover: #2d2d2b/i);
+  assert.match(globals, /--color-telegram: var\(--button-primary\)/i);
+  assert.match(
+    globals,
+    /--button-primary-hover-foreground: HighlightText/i,
+  );
+  assert.ok(
+    contrastRatio(
+      readHexVariable(globals, "button-primary"),
+      readHexVariable(globals, "button-primary-foreground"),
+    ) >= 4.5,
+    "Black action buttons must retain readable foreground contrast",
+  );
   assert.ok(
     contrastRatio(
       readHexVariable(globals, "border-strong"),
@@ -90,6 +104,9 @@ test("shared controls remain rectangular, keyboard-visible, and motion-safe", ()
 
   assert.match(button, /min-h-11 min-w-11/);
   assert.match(button, /rounded-md/);
+  assert.match(button, /bg-button-primary/);
+  assert.match(button, /hover:bg-button-primary-hover/);
+  assert.doesNotMatch(button, /bg-primary/);
   assert.doesNotMatch(button, /rounded-full/);
   assert.match(field, /min-h-11/);
   assert.match(field, /focus:ring-2/);
@@ -100,6 +117,55 @@ test("shared controls remain rectangular, keyboard-visible, and motion-safe", ()
   assert.match(globals, /forced-colors: active/);
   assert.match(layout, /className="skip-link"/);
   assert.match(layout, /href="#main-content"/);
+});
+
+test("all blue button treatments use the black action token", () => {
+  const button = read("src/components/ui/button.tsx");
+  const storeProfile = read("src/features/store/store-profile-form.tsx");
+  const catalog = read("src/features/store/public-catalog-view.tsx");
+  const dirtyBar = read("src/features/store/store-dirty-bar.tsx");
+  const forbiddenBlueButtonUtility =
+    /(?:bg|text|border|after:bg)-(?:primary(?:-[\w/]+)?|telegram(?:-[\w/]+)?|blue-\d{2,3}|\[#(?:2457e6|1948cf)\])/i;
+
+  assert.match(
+    button,
+    /primary:\s*\n?\s*"[^"]*bg-button-primary[^"]*"/,
+  );
+  assert.match(
+    button,
+    /telegram:\s*\n?\s*"[^"]*bg-button-primary[^"]*"/,
+  );
+  assert.match(button, /hover:text-button-primary-hover-foreground/);
+  assert.match(storeProfile, /file:bg-button-primary/);
+  assert.match(catalog, /after:bg-button-primary/);
+  assert.match(dirtyBar, /border-button-primary-foreground/);
+  assert.doesNotMatch(storeProfile, /file:bg-primary/);
+  assert.doesNotMatch(catalog, /after:bg-primary/);
+  assert.doesNotMatch(button, forbiddenBlueButtonUtility);
+
+  for (const filePath of collectSourceFiles(path.join(projectRoot, "src"))) {
+    if (!filePath.endsWith(".tsx")) continue;
+    const source = fs.readFileSync(filePath, "utf8");
+    const interactiveTags =
+      source.match(/<(?:button|Button|Link|a)\b[\s\S]*?>/g) ?? [];
+    const buttonTags = interactiveTags.filter(
+      (tag) => /^<(?:button|Button)\b/.test(tag) || /buttonVariants\(/.test(tag),
+    );
+
+    for (const tag of buttonTags) {
+      assert.doesNotMatch(
+        tag,
+        forbiddenBlueButtonUtility,
+        `Blue button treatment remains in ${path.relative(projectRoot, filePath)}`,
+      );
+    }
+
+    assert.doesNotMatch(
+      source,
+      /file:(?:bg|text|border)-(?:primary(?:-[\w/]+)?|telegram(?:-[\w/]+)?|blue-\d{2,3}|\[#(?:2457e6|1948cf)\])/i,
+      `Blue file-selector button remains in ${path.relative(projectRoot, filePath)}`,
+    );
+  }
 });
 
 test("application source does not regress to glass, decorative gradients, or oversized radius", () => {
