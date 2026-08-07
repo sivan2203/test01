@@ -54,7 +54,9 @@ test("the implemented visual language keeps the canonical light tokens and typog
   assert.match(globals, /--background: #f5f3ee/i);
   assert.match(globals, /--surface-raised: #fbfaf7/i);
   assert.match(globals, /--foreground: #171716/i);
-  assert.match(globals, /--primary: #2457e6/i);
+  assert.match(globals, /--ring: #ff488b/i);
+  assert.match(globals, /--primary: #ff488b/i);
+  assert.match(globals, /--primary-text: #9b174f/i);
   assert.match(globals, /--button-primary: #171716/i);
   assert.match(globals, /--button-primary-hover: #2d2d2b/i);
   assert.match(globals, /--color-telegram: var\(--button-primary\)/i);
@@ -68,6 +70,20 @@ test("the implemented visual language keeps the canonical light tokens and typog
       readHexVariable(globals, "button-primary-foreground"),
     ) >= 4.5,
     "Black action buttons must retain readable foreground contrast",
+  );
+  assert.ok(
+    contrastRatio(
+      readHexVariable(globals, "primary"),
+      readHexVariable(globals, "primary-foreground"),
+    ) >= 4.5,
+    "Pink accent text must retain readable foreground contrast",
+  );
+  assert.ok(
+    contrastRatio(
+      readHexVariable(globals, "primary-text"),
+      readHexVariable(globals, "background"),
+    ) >= 4.5,
+    "Pink accent text projection must retain readable contrast on paper",
   );
   assert.ok(
     contrastRatio(

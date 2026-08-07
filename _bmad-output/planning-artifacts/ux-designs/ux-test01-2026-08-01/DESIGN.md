@@ -21,8 +21,9 @@ colors:
   ink-inverse: '#FFFFFF'
   border-hairline: '#D8D5CE'
   border-strong: '#88857E'
-  accent-cobalt: '#2457E6'
-  on-accent: '#FFFFFF'
+  accent-pink: '#FF488B'
+  accent-pink-text: '#9B174F'
+  on-accent: '#171716'
   action-black: '#171716'
   action-black-hover: '#2D2D2B'
   success: '#1E6B48'
@@ -105,7 +106,7 @@ spacing:
 components:
   button:
     primary-background: '{colors.action-black}'
-    primary-foreground: '{colors.on-accent}'
+    primary-foreground: '{colors.ink-inverse}'
     secondary-background: '{colors.surface-raised}'
     secondary-foreground: '{colors.ink-primary}'
     destructive-foreground: '{colors.danger}'
@@ -124,7 +125,7 @@ components:
   seller-navigation:
     background: '{colors.surface-muted}'
     active-foreground: '{colors.ink-primary}'
-    active-marker: '{colors.accent-cobalt}'
+    active-marker: '{colors.accent-pink}'
     divider: '{colors.border-hairline}'
   page-header:
     background: '{colors.surface-base}'
@@ -139,7 +140,7 @@ components:
   data-row:
     background: '{colors.surface-base}'
     divider: '{colors.border-hairline}'
-    focus-marker: '{colors.accent-cobalt}'
+    focus-marker: '{colors.accent-pink}'
   status-badge:
     background: '{colors.surface-raised}'
     foreground: '{colors.ink-secondary}'
@@ -152,20 +153,20 @@ components:
   attention-list:
     background: '{colors.surface-base}'
     foreground: '{colors.ink-primary}'
-    marker: '{colors.accent-cobalt}'
+    marker: '{colors.accent-pink}'
     divider: '{colors.border-hairline}'
   form-field:
     background: '{colors.surface-raised}'
     foreground: '{colors.ink-primary}'
     border: '{colors.border-strong}'
-    focus: '{colors.accent-cobalt}'
+    focus: '{colors.accent-pink}'
     error: '{colors.danger}'
     radius: '{rounded.md}'
   slug-editor:
     background: '{colors.surface-raised}'
     foreground: '{colors.ink-primary}'
     border: '{colors.border-strong}'
-    focus: '{colors.accent-cobalt}'
+    focus: '{colors.accent-pink}'
     radius: '{rounded.md}'
   error-summary:
     background: '{colors.danger-surface}'
@@ -193,13 +194,13 @@ components:
   step-indicator:
     foreground: '{colors.ink-secondary}'
     current-foreground: '{colors.ink-primary}'
-    marker: '{colors.accent-cobalt}'
+    marker: '{colors.accent-pink}'
     divider: '{colors.border-strong}'
   media-queue:
     background: '{colors.surface-base}'
     item-background: '{colors.surface-base}'
     divider: '{colors.border-hairline}'
-    progress: '{colors.accent-cobalt}'
+    progress: '{colors.accent-pink}'
     radius: '{rounded.md}'
   settings-editor:
     background: '{colors.surface-base}'
@@ -211,13 +212,13 @@ components:
   store-header:
     background: '{colors.surface-base}'
     foreground: '{colors.ink-primary}'
-    accent: '{colors.accent-cobalt}'
+    accent: '{colors.accent-pink}'
     divider: '{colors.border-strong}'
   catalog-view-toggle:
     background: '{colors.surface-base}'
     foreground: '{colors.ink-secondary}'
     active-foreground: '{colors.ink-primary}'
-    active-marker: '{colors.accent-cobalt}'
+    active-marker: '{colors.accent-pink}'
   product-card:
     background: '{colors.surface-base}'
     foreground: '{colors.ink-primary}'
@@ -228,8 +229,8 @@ components:
     foreground: '{colors.ink-primary}'
     radius: '{rounded.md}'
   telegram-cta:
-    background: '{colors.accent-cobalt}'
-    foreground: '{colors.on-accent}'
+    background: '{colors.action-black}'
+    foreground: '{colors.ink-inverse}'
     radius: '{rounded.md}'
     min-height: 48px
   copy-message-fallback:
@@ -266,7 +267,7 @@ components:
 - **Витрина покупателя** редакционная: крупное название, большие фотографии, спокойный ритм и один очевидный CTA.
 - **Кабинет продавца** операционный: компактные строки, видимые статусы, sidebar на desktop, минимум контейнеров и один главный action на поверхности.
 
-`#171716` задаёт все залитые primary/Telegram action-кнопки; `#2457E6` остаётся для фокуса, ссылок, прогресса и активного положения. Ни один из цветов не служит декором. Telegram не создаёт отдельную синюю палитру: назначение действия сообщают текст и иконка.
+`#171716` задаёт все залитые primary/Telegram action-кнопки; `#FF488B` остаётся для фокуса, ссылок, прогресса и активного положения. Ни один из цветов не служит декором. Telegram не создаёт отдельную розовую палитру: назначение действия сообщают текст и иконка.
 
 Liquid glass, декоративный blur, градиенты, неон, cardification и pill-everywhere не входят в язык системы. Светлая тема обязательна; автоматическое переключение в недизайненную dark theme запрещено.
 
@@ -278,14 +279,14 @@ Liquid glass, декоративный blur, градиенты, неон, cardi
 - **Graphite (`{colors.ink-primary}`)** — заголовки, основной текст и structural rules.
 - **Secondary Ink (`{colors.ink-secondary}`)** — пояснения и метаданные. `{colors.ink-disabled}` применяется к действительно недоступным контролам и placeholder-тексту с контрастом не ниже 4.5:1, но не к обычному body copy.
 - **Action Black (`{colors.action-black}`)** — заливка всех primary/Telegram кнопок; hover использует `{colors.action-black-hover}`.
-- **Cobalt (`{colors.accent-cobalt}`)** — focus, links, active navigation, progress и текущий шаг; не заливка кнопки.
+- **Pink (`{colors.accent-pink}`)** — focus, links, active navigation, progress и текущий шаг; не заливка кнопки.
 - **Semantic colors** — `{colors.success}`, `{colors.warning}`, `{colors.danger}` всегда сопровождаются текстом или иконкой. Мягкие semantic surfaces не превращаются в цветные карточки.
 
 Load-bearing contrast pairs:
 
 - `{colors.ink-primary}` и `{colors.ink-secondary}` на `{colors.surface-base}` или `{colors.surface-raised}` должны проходить WCAG 2.2 AA для normal text;
 - `{colors.on-accent}` на `{colors.action-black}` — не ниже 4.5:1 для кнопочного текста;
-- `{colors.accent-cobalt}` на `{colors.surface-base}` — не ниже 4.5:1 для текста и активных markers;
+- `{colors.accent-pink-text}` на `{colors.surface-base}` — не ниже 4.5:1 для ссылок и текстовых labels; `{colors.accent-pink}` используется для markers, focus и progress non-text UI;
 - focus, borders контролов и semantic icons — не ниже 3:1 к соседней поверхности.
 
 Запрещено сообщать состояние только цветом, использовать слабый opacity для нужного текста и вводить отдельные brand colors для Telegram, аналитики или категорий товара.
@@ -331,7 +332,7 @@ Load-bearing contrast pairs:
 - [`mockups/key-store-settings-preview.html`](mockups/key-store-settings-preview.html) — sectioned settings, live preview и dirty save bar;
 - [`mockups/key-public-storefront-product.html`](mockups/key-public-storefront-product.html) — editorial product detail на desktop и 390px.
 
-Ранние [`mockups/storefront-mobile.html`](mockups/storefront-mobile.html) и [`mockups/seller-dashboard-mobile.html`](mockups/seller-dashboard-mobile.html) сохраняют только исходную content hierarchy; их glass/pill treatment заменён этим контрактом. **Spines имеют приоритет над всеми mockups.** В частности, канонический accent — `#2457E6`, лимит товарного фото — 6 MiB, аватара — 2 MiB, даже если иллюстрация показывает другое значение.
+Ранние [`mockups/storefront-mobile.html`](mockups/storefront-mobile.html) и [`mockups/seller-dashboard-mobile.html`](mockups/seller-dashboard-mobile.html) сохраняют только исходную content hierarchy; их glass/pill treatment заменён этим контрактом. **Spines имеют приоритет над всеми mockups.** В частности, канонический accent — `#FF488B`, лимит товарного фото — 6 MiB, аватара — 2 MiB, даже если иллюстрация показывает другое значение.
 
 ## Elevation & Depth
 
@@ -358,25 +359,25 @@ Load-bearing contrast pairs:
 
 | Компонент | Визуальный контракт |
 |---|---|
-| `button` | Primary и Telegram — `{colors.action-black}`/`{colors.on-accent}`; secondary — raised/transparent с strong border; destructive — danger text/border. Высота не меньше 44px, radius `{rounded.md}`. |
+| `button` | Primary и Telegram — `{colors.action-black}`/`{colors.ink-inverse}`; secondary — raised/transparent с strong border; destructive — danger text/border. Высота не меньше 44px, radius `{rounded.md}`. |
 | `icon-button` | 44×44px, видимая рамка, однозначная иконка; destructive variant использует danger вместе с accessible label. |
 | `seller-shell` | Warm Paper, fluid workspace, hairline boundaries; не помещать весь route в одну карточку. |
-| `seller-navigation` | Muted rail на desktop, solid bottom bar на mobile; active state = cobalt marker + stronger text, не залитая pill. |
+| `seller-navigation` | Muted rail на desktop, solid bottom bar на mobile; active state = pink marker + stronger text, не залитая pill. |
 | `page-header` | Один `h1`, короткий mono context и не более одного primary action; нижняя strong rule. |
 | `section` | Заголовок + content, отделённые spacing/rule; background card только если секция действительно отдельный объект. |
 | `toolbar` | Filters, search и actions в одной строке; на mobile переносится без горизонтального overflow. |
 | `data-row` | Hairline rows, thumbnail + title как главная ячейка; hover/focus тональный, actions не hover-only. |
 | `status-badge` | Compact pill допускается только для `Черновик`, `Опубликован`, `Скрыт`, availability и file status; всегда текстовый label. |
 | `metric-group` | Одно dominant number, остальные метрики — rows; без декоративной карточки на каждое число. |
-| `attention-list` | Strong top rule, нумерованные rows, один recovery link на row; cobalt только на action/count. |
-| `form-field` | Label сверху, helper/error снизу, raised input, 1px border; focus ring cobalt, error border + text. |
+| `attention-list` | Strong top rule, нумерованные rows, один recovery link на row; pink только на action/count. |
+| `form-field` | Label сверху, helper/error снизу, raised input, 1px border; focus ring pink, error border + text. |
 | `slug-editor` | URL prefix и editable segment визуально разделены; availability/status находится рядом, warning о смене URL — до сохранения. |
 | `error-summary` | Danger surface с левой/верхней rule, заголовком и ссылками к полям; не toast. |
 | `feedback-banner` | Page/section message с коротким заголовком, причиной и следующим действием; semantic color не является единственным сигналом. |
 | `toast` | Небольшая inverse surface для краткого noncritical success; не используется для единственного сообщения об ошибке. |
 | `native-dialog` | Raised Paper, max radius `{rounded.lg}`, ясный title/body/actions; default focus визуально остаётся на отмене для destructive action. |
 | `product-wizard` | Один шаг на main surface, постоянные Back/Continue и отдельный draft action; review — разделённые rows, не набор cards. |
-| `step-indicator` | Desktop — четыре segments на rule; mobile — `Шаг n из 4` + короткая progress line. Current state виден текстом и cobalt marker. |
+| `step-indicator` | Desktop — четыре segments на rule; mobile — `Шаг n из 4` + короткая progress line. Current state виден текстом и pink marker. |
 | `media-queue` | Dropzone с dashed border; каждый файл — row с thumbnail, metadata, реальным determinate byte-progress, отдельным `Обрабатываем…` после 100%, retry и reorder controls; общий batch count показывает `N из M`. |
 | `settings-editor` | Desktop: section navigation + form + sticky live preview. Dirty save bar inverse. Mobile: секции stack/route, preview отдельной командой. |
 | `store-header` | Редакционная шапка без glass overlay: mark/avatar, название, optional description и thin rule. |
@@ -395,7 +396,7 @@ Load-bearing contrast pairs:
 | Do | Don't |
 |---|---|
 | Строить иерархию grid, type и rules | Оборачивать каждый блок в rounded card |
-| Использовать cobalt для links, focus, progress и active markers | Рассыпать cobalt по кнопкам, декоративным подписям и фонам |
+| Использовать pink для links, focus, progress и active markers | Рассыпать pink по кнопкам, декоративным подписям и фонам |
 | Давать публичным фото и названию editorial scale | Делать seller admin таким же крупным и разреженным |
 | Показывать статусы текстом, иконкой и semantic color | Кодировать success/error одним цветом |
 | Оставлять 6–10px radius и прямоугольный характер | Делать все кнопки, поля и navigation pills |

@@ -107,8 +107,8 @@ Target: зафиксированный uncommitted working tree после acces
 
 - `ink-disabled #706f69` / `surface #fbfaf7`: 4.83:1;
 - `ink-secondary #5e5d57` / `background #f5f3ee`: 5.96:1;
-- `primary #2457e6` / `background #f5f3ee`: 5.29:1;
-- `white #ffffff` / `primary #2457e6`: 5.86:1;
+- `primary-text #9b174f` / `background #f5f3ee`: 5.70:1;
+- `primary #ff488b` / `background #f5f3ee`: 2.89:1 (non-text marker/focus use only; not a text contrast claim);
 - `border-strong #88857e` / `surface #fbfaf7`: 3.53:1;
 - `destructive #a4352b` / `destructive-surface #f7e8e6`: 5.65:1.
 

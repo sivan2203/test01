@@ -104,7 +104,7 @@ Seller navigation: desktop sidebar при достаточной ширине; m
 | FR-19: Traffic source tracking | UTM/source precedence, `unknown`, session propagation |
 | FR-20: Product-level analytics summary | Сегодня и 7 дней; views и CTA clicks без обещания purchase data |
 | FR-21: Mobile-first responsive surfaces | Полные flows на 320–430px, 44×44 targets, intentional desktop |
-| FR-22: Minimal visual language | `DESIGN.md`: warm near-white, graphite, cobalt, no glass/cardification |
+| FR-22: Minimal visual language | `DESIGN.md`: warm near-white, graphite, pink, no glass/cardification |
 
 ## Voice and Tone
 
@@ -232,7 +232,7 @@ Microcopy спокойный, конкретный и честный. Brand post
 - Tab order совпадает с visual order. Active seller navigation использует `aria-current="page"`; wizard — `aria-current="step"`.
 - Все primary и icon touch targets не меньше 44×44 CSS px.
 - Reflow без horizontal page scroll при 320 CSS px/400% zoom; обязательные device checks — 320, 360, 390, 412 и 430px.
-- Visible focus использует `{colors.accent-cobalt}` и не закрывается sticky navigation/savebar. Layout резервирует высоту fixed controls и применяет scroll padding.
+- Visible focus использует `{colors.accent-pink}` и не закрывается sticky navigation/savebar. Layout резервирует высоту fixed controls и применяет scroll padding.
 - Mobile fixed surfaces используют `padding-bottom: calc(base + env(safe-area-inset-bottom))`.
 - `form-field` связывает label/helper/error; `error-summary` получает focus только после failed Continue/Submit и не дублирует screen-reader announcement бесконечно.
 - `native-dialog`: `showModal()`, inert background, Tab/Shift+Tab внутри, Escape, видимая Cancel, return focus. Destructive action не получает initial focus.

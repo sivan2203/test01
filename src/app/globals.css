@@ -11,9 +11,10 @@
   --ink-disabled: #706f69;
   --border: #d8d5ce;
   --border-strong: #88857e;
-  --ring: #2457e6;
-  --primary: #2457e6;
-  --primary-foreground: #ffffff;
+  --ring: #ff488b;
+  --primary: #ff488b;
+  --primary-text: #9b174f;
+  --primary-foreground: #171716;
   --button-primary: #171716;
   --button-primary-hover: #2d2d2b;
   --button-primary-foreground: #ffffff;
@@ -40,6 +41,7 @@
   --color-border-strong: var(--border-strong);
   --color-ring: var(--ring);
   --color-primary: var(--primary);
+  --color-primary-text: var(--primary-text);
   --color-primary-foreground: var(--primary-foreground);
   --color-button-primary: var(--button-primary);
   --color-button-primary-hover: var(--button-primary-hover);
@@ -60,6 +62,10 @@
   --radius-lg: 0.625rem;
   --radius-xl: 0.625rem;
   --radius-2xl: 0.625rem;
+}
+
+.text-primary {
+  color: var(--primary-text);
 }
 
 * {
@@ -93,7 +99,7 @@ textarea {
 }
 
 ::selection {
-  background: #cad6ff;
+  background: #ffd0e1;
   color: #171716;
 }
 
@@ -148,6 +154,7 @@ dialog::backdrop {
     --border-strong: CanvasText;
     --ring: Highlight;
     --primary: Highlight;
+    --primary-text: Highlight;
     --primary-foreground: HighlightText;
     --button-primary: CanvasText;
     --button-primary-hover: Highlight;

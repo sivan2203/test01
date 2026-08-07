@@ -36,7 +36,7 @@ deployment: excluded
 ### Правила разрешения конфликтов
 
 - `DECISIONS.md` и существующие бизнес-инварианты важнее демонстрационного текста HTML-макетов.
-- Акцент — `#2457E6`, даже если key-state HTML использует близкий демонстрационный оттенок.
+- Акцент — `#FF488B`, даже если key-state HTML использует близкий демонстрационный оттенок.
 - Товарное фото — JPG/PNG/WebP, максимум **6 MiB**, максимум 10; значение 10 MB в макете не переносится.
 - Avatar — максимум **2 MiB**; значение 5 MB в макете не переносится.
 - Макет публичного товара показывает иллюстративные facts/related content. Поля, которых нет в текущей модели, не создаются и не имитируются.
@@ -285,7 +285,7 @@ I0 baseline/docs
 - `src/features/store/public-storefront-image.tsx`, `src/features/product/product-cover.tsx` — согласовать responsive image behavior, aspect ratio и `sizes` по актуальному Next 16 guide.
 - `src/features/store/public-product-detail.tsx` — editorial detail только на доступных product fields; CTA явно называет текущий товар.
 - `src/features/store/public-product-gallery.tsx` — сохранить swipe, prev/next, thumbnails, position announcements; добавить полный keyboard/focus/reduced-motion pass.
-- `src/features/store/public-contact-cta.tsx` — общий cobalt primary, Telegram label/icon, disabled/fallback states; server-trusted message contract не менять.
+- `src/features/store/public-contact-cta.tsx` — общий black primary, Telegram label/icon, disabled/fallback states; server-trusted message contract не менять.
 - `src/app/(public)/[storeSlug]/page.tsx`, `src/app/(public)/[storeSlug]/products/[productId]/page.tsx` — сохранить published-only queries, attribution и preview analytics exclusion.
 - `src/app/page.tsx` — завершить чистый технический вход без smoke-test copy и без выдуманного marketplace discovery.
 
