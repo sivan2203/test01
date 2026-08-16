@@ -44,3 +44,6 @@ next-env.d.ts
 
 # local render cache produced while visually checking the UX mockups
 /_bmad-output/planning-artifacts/ux-designs/ux-test01-2026-08-01/.working/.qa-render/
+
+.vercel
+.env*
